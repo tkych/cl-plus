@@ -1,4 +1,4 @@
-;;;; Last modified: 2014-06-27 22:48:41 tkych
+;;;; Last modified: 2014-06-29 21:48:26 tkych
 
 ;; cl-plus/test/core/buxis.lisp
 
@@ -1903,7 +1903,7 @@
   ;; inifite
   (is (eql (with-time-limit (1 :boom!)
              (some* #'numberp  #[1 ..]))
-           t))
+           T))
   (is (eql (with-time-limit (1 :boom!)
              (some* #'numberp  #[#\a #\b ..]))
            :boom!))
@@ -1977,16 +1977,17 @@
   (is-false (some* ^xy(and (oddp x) (digit-char-p y))
                    #[1 3 5]
                    "ABC1"))
+  
   (is (eql (with-time-limit (1 :boom!)
              (some* ^xy(and (numberp x) (digit-char-p y))
                     #[1 ..]
                     "123"))
-           t))
+           1))
   (is (eql (with-time-limit (1 :boom!)
              (some* ^xy(and (numberp x) (digit-char-p y))
                     #[1 ..]
                     "123A"))
-           t))
+           1))
   ;; lazy-sequence
   (is-true  (some* ^xy(and (numberp x) (alpha-char-p y))
                    #[1 2 3]
@@ -3255,22 +3256,6 @@
   (is-= 0 (reduce* #'+ #[]))
   (is-= 0 (reduce* #'+ #2A(())))
   (is-= 0 (reduce* #'+ #{})))
-
-(test ?reduce*.empty
-  (is (= 0 (reduce* #'* '()     :initial-value 0)))
-  (is (= 0 (reduce* #'* #()     :initial-value 0)))
-  (is (= 0 (reduce* #'* ""      :initial-value 0)))
-  (is (= 0 (reduce* #'* #*      :initial-value 0)))
-  (is (= 0 (reduce* #'* #[]     :initial-value 0)))
-  (is (= 0 (reduce* #'* #2A(()) :initial-value 0)))
-  (is (= 0 (reduce* #'* #{}     :initial-value 0)))
-  (is (= 0 (reduce* #'+ '())))
-  (is (= 0 (reduce* #'+ #())))
-  (is (= 0 (reduce* #'+ "")))
-  (is (= 0 (reduce* #'+ #*)))
-  (is (= 0 (reduce* #'+ #[])))
-  (is (= 0 (reduce* #'+ #2A(()))))
-  (is (= 0 (reduce* #'+ #{}))))
 
 
 (test ?reduce*.only-one-content

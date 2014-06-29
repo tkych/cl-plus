@@ -1,4 +1,4 @@
-;;;; Last modified: 2014-06-29 10:04:44 tkych
+;;;; Last modified: 2014-06-29 21:48:53 tkych
 
 ;; cl-plus/src/core/buxis.lisp
 
@@ -87,7 +87,8 @@ Macros
                 #:ensure-list
                 #:ensure-function
                 #:copy-array
-                #:copy-hash-table)
+                #:copy-hash-table
+                #:when-let)
   (:import-from #:cl-plus.src.dev-util
                 #:copy-empty-array
                 #:copy-empty-hash-table)
@@ -510,35 +511,29 @@ Notes
         (declare (type list buxides))
         (if (every #'sequencep buxides)
             (apply #'some predicate buxides)
-            (and (loop :with iters := (mapcar #'%make-iterator buxides)
-                       :for  vals := (loop :for iter :in iters
-                                           ;; entry ::= (more? tag value)
-                                           :for entry := (multiple-value-list (funcall iter))
-                                           :if (first entry)
-                                             :collect (third entry)
-                                           :else :return nil)
-                       :while vals
-                         :thereis (apply predicate vals))
-                 t)))
+            (loop :with iters := (mapcar #'%make-iterator buxides)
+                  :for  vals := (loop :for iter :in iters
+                                      ;; entry ::= (more? tag value)
+                                      :for entry := (multiple-value-list (funcall iter))
+                                      :if (first entry)
+                                        :collect (third entry)
+                                      :else :return nil)
+                  :while vals
+                  :thereis (apply predicate vals))))
+
       (etypecase first-buxis
         (sequence
          (some predicate first-buxis))
+
         (hash-table
-         (and (loop :for v :being :the :hash-values :of first-buxis
-                      :thereis (funcall predicate v))
-              t))
+         (loop :for v :being :the :hash-values :of first-buxis
+               :thereis (funcall predicate v)))
+        
         (array
-         (do ((i 0 (1+ i))
-              (size (array-total-size first-buxis)))
-             ((<= size i) NIL)
-           (declare (type array-index i size))
-           (when (funcall predicate (row-major-aref first-buxis i))
-             (return T)))
-         ;; (and (loop :for i :of-type array-index
-         ;;            :from 0 :below (array-total-size first-buxis)
-         ;;              :thereis (funcall predicate (row-major-aref first-buxis i)))
-         ;;      t)
-         )
+         (loop :for i :of-type array-index
+               :from 0 :below (array-total-size first-buxis)
+               :thereis (funcall predicate (row-major-aref first-buxis i))))
+
         (lazy-sequence
          (with-lazy-seq-iterator (next-entry first-buxis)
            (loop
@@ -546,11 +541,11 @@ Notes
                (declare (ignore index))
                (unless more?
                  (return-from some* NIL))
-               (when (funcall predicate value)
-                 (return-from some* T)))))))))
+               (when-let (v (funcall predicate value))
+                 (return-from some* v)))))))))
 
 (setf (documentation 'SOME* 'function) "
-SOME* predicate first-buxis &rest more-buxides => boolean
+SOME* predicate first-buxis &rest more-buxides => generalized-boolean
 
 Notes
 -----
