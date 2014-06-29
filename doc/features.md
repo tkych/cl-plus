@@ -1,4 +1,4 @@
-Last modified: 2014-06-29 11:43:32 tkych
+Last modified: 2014-06-29 16:10:01 tkych
 
 <!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/doc/features.md") -->
 
@@ -18,7 +18,7 @@ Last modified: 2014-06-29 11:43:32 tkych
 
 #### 1.1 CARET-READER `^` for shorthand lambda forms.
 
-- Church style:
+- Church like style:
 
 ```lisp
   ^x(+ x x)       -> (lambda (x)
@@ -32,15 +32,16 @@ Last modified: 2014-06-29 11:43:32 tkych
                        (+ x0 x1))
 ```
   
-- McCarthy style:
+- McCarthy like style:
 
 ```lisp
   (^ (x) (+ x x)) -> (lambda (x) (+ x x))
 ```
      
-- Hickey style:
+- Hickey like style:
 
 ```lisp
+  ;; @ is an alias for @0
   ^(+ @ @)      -> (lambda (@0 &rest @r)
                      (declare (ignore @r))
                      (+ @0 @0))
@@ -50,13 +51,18 @@ Last modified: 2014-06-29 11:43:32 tkych
   ^(+ @2 @3)    -> (lambda (@0 @1 @2 @3 &rest @r)
                      (declare (ignore @0 @1 @r))
                      (+ @2 @3))
-  ^(list @2 @r) -> (lambda (@0 @1 @2 &rest @r)
-                     (declare (ignore @0 @1))
-                     (list @2 @r))
-  ^(cons @2 @w) -> (lambda (@0 @1 @2 &rest @r)
-                     (let ((@w (list* @0 @1 @2 @r)))
-                       (cons @2 @w))
 
+  ;; @r is an alias for @rest
+  ^(list @2 @rest) -> (lambda (@0 @1 @2 &rest @rest)
+                        (declare (ignore @0 @1))
+                        (list @2 @rest))
+
+  ;; @a is an alias for @all
+  ^(cons @2 @all) -> (lambda (@0 @1 @2 &rest @rest)
+                       (let ((@all (list* @0 @1 @2 @rest)))
+                         (cons @2 @all))
+
+  ;; @m is an alias for @me
   ^(if (<= @ 1)
        1
        (* @ (@me (1- @))))
@@ -100,13 +106,13 @@ Last modified: 2014-06-29 11:43:32 tkych
  (take :all #[#\a .. #\z] 'string) => "abcdefghijklmnopqrstuvwxyz"
  (take :all #[0..10])              => (0 1 2 3 4 5 6 7 8 9 10)
 
- ;; NB. Only ccl can make a lazy-sequence at read time.
+ ;; NB. Only ccl and clisp can make a lazy-sequence at read time.
  ;;     If num-arg is supplied, #[] acts as ordinal macros.
 ```
 
 
 2.Sub-Packages <a name="sub-packages">
----------------------------------
+--------------------------------------
 
 All sub-packages have package-nickname `"CL+<NAME>"` (e.g., `"CL+LAZY-SEQUENSE"` for *lazy-sequence*).
 
