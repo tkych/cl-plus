@@ -1,4 +1,4 @@
-;;;; Last modified: 2014-06-29 21:48:26 tkych
+;;;; Last modified: 2014-06-29 23:29:23 tkych
 
 ;; cl-plus/test/core/buxis.lisp
 
@@ -3239,16 +3239,22 @@
 ;;--------------------------------------------------------------------
 
 (test ?reduce*.error
-  )
+  (signals type-error (reduce* #() '()))
+  (signals type-error (reduce* '+ '() :key #()))
+  (signals type-error (reduce* '+ '() :start nil))
+  (signals type-error (reduce* '+ '() :start -1))
+  (signals type-error (reduce* '+ '() :end   -1))
+  (signals error      (reduce* '+ '() :start 42 :end 24)))
+
 
 (test ?reduce*.empty
-  (is-= 0 (reduce* #'* '()     :initial-value 0))
-  (is-= 0 (reduce* #'* #()     :initial-value 0))
-  (is-= 0 (reduce* #'* ""      :initial-value 0))
-  (is-= 0 (reduce* #'* #*      :initial-value 0))
-  (is-= 0 (reduce* #'* #[]     :initial-value 0))
-  (is-= 0 (reduce* #'* #2A(()) :initial-value 0))
-  (is-= 0 (reduce* #'* #{}     :initial-value 0))
+  (is-= 42 (reduce* #'* '()     :initial-value 42))
+  (is-= 42 (reduce* #'* #()     :initial-value 42))
+  (is-= 42 (reduce* #'* ""      :initial-value 42))
+  (is-= 42 (reduce* #'* #*      :initial-value 42))
+  (is-= 42 (reduce* #'* #[]     :initial-value 42))
+  (is-= 42 (reduce* #'* #2A(()) :initial-value 42))
+  (is-= 42 (reduce* #'* #{}     :initial-value 42))
   (is-= 0 (reduce* #'+ '()))
   (is-= 0 (reduce* #'+ #()))
   (is-= 0 (reduce* #'+ ""))
@@ -3258,29 +3264,138 @@
   (is-= 0 (reduce* #'+ #{})))
 
 
-(test ?reduce*.only-one-content
-  (is (= 0 (reduce* #'* '(0))))
-  (is (= 0 (reduce* #'* #(0))))
+(test ?reduce*.only-one-element
+  (is-= 42 (reduce* #'* '(42)))
+  (is-= 42 (reduce* #'* #(42)))
   (is (char= #\s (reduce* #'* "s")))
-  (is (= 0 (reduce* #'* #*0)))
-  (is (= 0 (reduce* #'* #[0])))
-  (is (= 0 (reduce* #'* #2A((0)))))
-  (is (= 0 (reduce* #'* #{:foo 0}))))
+  (is-= 0 (reduce* #'* #*0))
+  (is-= 42 (reduce* #'* #[42]))
+  (is-= 42 (reduce* #'* #2A((42))))
+  (is-= 42 (reduce* #'* #{:foo 42})))
 
 
-(test ?reduce*.buxis
-  (is (= 10 (reduce* #'+ '(0 1 2 3 4))))
-  (is (= 10 (reduce* #'+ #(0 1 2 3 4))))
-  (is (= 10 (reduce* ^ac(+ a (digit-char-p c)) "01234"
-                     :initial-value 0)))
-  (is (= 10 (reduce* #'+ #10*1
-                     :initial-value 0)))
-  (is (= 10 (reduce* #'+ #[0 1 2 3 4]
-                     :initial-value 0)))
-  (is (= 10 (reduce* #'+ #2A((0 1 2 3 4))
-                     :initial-value 0)))
-  (is (= 10 (reduce* #'+ #{:foo 1 :bar 2 :baz 3 :quux 4}
-                     :initial-value 0))))
+(test ?reduce*.list
+  (for-all ((lst (gen-list)))
+    (is-= (reduce* '+ lst)
+          (reduce  '+ lst))
+
+    (is-= (reduce* '+ lst :key '1+)
+          (reduce  '+ lst :key '1+))
+    
+    (is-= (reduce* '+ lst :from-end t)
+          (reduce  '+ lst :from-end t))
+
+    (let ((init (random most-positive-fixnum)))
+      (is-= (reduce* '+ lst :initial-value init)
+            (reduce  '+ lst :initial-value init)))
+
+    (let ((rand (random (max 1 (length lst)))))
+      (is-= (reduce* '+ lst :start rand)
+            (reduce  '+ lst :start rand))
+
+      (let ((rand2 (random (max 1 rand))))
+        (is-= (reduce* '+ lst :start rand2 :end rand)
+              (reduce  '+ lst :start rand2 :end rand))))))
+
+
+(test ?reduce*.vector
+  (for-all ((lst (gen-list)))
+    (let ((vec (coerce lst 'vector)))
+
+      (is-= (reduce* '+ vec)
+            (reduce  '+ vec))
+
+      (is-= (reduce* '+ vec :key '1+)
+            (reduce  '+ vec :key '1+))
+
+      (is-= (reduce* '+ vec :from-end t)
+            (reduce  '+ vec :from-end t))
+      
+      (let ((init (random most-positive-fixnum)))
+        (is-= (reduce* '+ vec :initial-value init)
+              (reduce  '+ vec :initial-value init)))
+
+      (let ((rand (random (max 1 (length vec)))))
+        (is-= (reduce* '+ vec :start rand)
+              (reduce  '+ vec :start rand))
+
+        (let ((rand2 (random (max 1 rand))))
+          (is-= (reduce* '+ vec :start rand2 :end rand)
+                (reduce  '+ vec :start rand2 :end rand)))))))
+
+
+(test ?reduce*.array
+  (for-all ((lst1 (gen-list))
+            (lst2 (gen-list)))
+    (let* ((dim2 (min (length lst1) (length lst2)))
+           (ary  (make-array (list 2 dim2)
+                             :initial-contents (list (subseq lst1 0 dim2)
+                                                     (subseq lst2 0 dim2)))))
+      ;; (repl-utilities:dbgv () dim2 ary)
+      (is-= (reduce* '+ ary)
+            (loop :for i :from 0 :below (* 2 dim2)
+                  :sum (row-major-aref ary i)))
+      
+      (is-= (reduce* '+ ary :key '1+)
+            (loop :for i :from 0 :below (* 2 dim2)
+                  :sum (1+ (row-major-aref ary i))))
+      
+      (let ((init (random most-positive-fixnum)))
+        (is-= (reduce* '+ ary :initial-value init)
+              (+ init (loop :for i :from 0 :below (* 2 dim2)
+                            :sum (row-major-aref ary i)))))
+      
+      (is-= (reduce* '+ ary :from-end t)
+            (loop :for i :downfrom (1- (* 2 dim2)) :to 0
+                  :sum (row-major-aref ary i)))
+
+      (let ((rand (random (max 1 (* 2 dim2)))))
+        (is-= (reduce* '+ ary :start rand)
+              (loop :for i :from rand :below (* 2 dim2)
+                            :sum (row-major-aref ary i)))
+
+        (let ((rand2 (random (max 1 rand))))
+          ;; (repl-utilities:dbgv () rand rand2)
+          (is-= (reduce* '+ ary :start rand2 :end rand)
+                (loop :for i :from rand2 :below rand
+                            :sum (row-major-aref ary i))))))))
+
+
+(test ?reduce*.hash-table
+  (for-all ((vals (gen-list)))
+    (let ((ht  (loop :with h := (make-hash-table :test 'equal)
+                     :for v :in vals
+                     :for k :from 0
+                     :do (setf (gethash k h) v)
+                     :finally (return h))))
+      ;; (repl-utilities:dbgv () vals)
+      (is-= (reduce* '+ ht)
+            (loop :for v :being :the :hash-values :of ht
+                  :sum v))
+      
+      (is-= (reduce* '+ ht :key '1+)
+            (loop :for v :being :the :hash-values :of ht
+                  :sum (1+ v)))
+      
+      (let ((init (random most-positive-fixnum)))
+        (is-= (reduce* '+ ht :initial-value init)
+              (+ init (loop :for v :being :the :hash-values :of ht
+                            :sum v))))
+      
+      (is-= (reduce* '+ ht :from-end t)
+            (loop :for v :being :the :hash-values :of ht
+                  :sum v))
+
+      (let ((rand (random (max 1 (length vals)))))
+        (is-= (reduce* '+ ht :start rand)
+              (loop :for v :being :the :hash-values :of ht
+                    :sum v))
+
+        (let ((rand2 (random (max 1 rand))))
+          ;; (repl-utilities:dbgv () rand rand2)
+          (is-= (reduce* '+ ht :start rand2 :end rand)
+                (loop :for v :being :the :hash-values :of ht
+                      :sum v)))))))
 
 
 ;;--------------------------------------------------------------------
