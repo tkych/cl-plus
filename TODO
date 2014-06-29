@@ -1,0 +1,24 @@
+Last modified: 2014-06-29 10:09:38 tkych
+
+TODO
+----
+
+ - FIXME: except for ccl, clisp:
+    Make Sharp-bracket-reader #[] to create a lazy-sequence at READ TIME.
+    e.g. '#[1 ..] => #[1 ..]
+
+ - PORTABILITY: acl, lispworks, mocl, ...
+
+ - FIXME: ccl: (run-tests '?srfi-45) sometimes calls infinite loop zombi thread.
+               Probably, WITH-TIME-LIMIT.
+
+ - TEST: except for ccl, sbcl, WITH-TIME-LIMIT at ?srfi-45.
+
+ - ADD: documentation.
+
+ - OPTIMIZE: compiler-macros.
+
+ - OPTIMIZE: lazy-sequences.
+
+ - IMPLEMENT: CDR-2, CDR-13, SRFI-19, ...
+
