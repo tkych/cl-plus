@@ -1,4 +1,4 @@
-;;;; Last modified: 2014-06-29 10:22:54 tkych
+;;;; Last modified: 2014-06-29 11:25:08 tkych
 
 ;; cl-plus/src/core/lazy-sequence.lisp
 
@@ -105,8 +105,8 @@ Examples
  * (defun random-chars ()
      (induce ^(code-char (+ (random #.(- (char-code #\z) (char-code #\a)))
                             #.(char-code #\a)))))
- * (take 20 (random-chars) 'string)  => "wmhdghxvwrubfocadkcj"
- * (take 20 (random-chars) 'string)  => "ocncjpbbucnuiwuruimg"
+ * (take 20 (random-chars) 'string)  => \"wmhdghxvwrubfocadkcj\"
+ * (take 20 (random-chars) 'string)  => \"ocncjpbbucnuiwuruimg\"
 
  ;; Examples from SRFI-41
  * (defun make-random-flow (seed)
