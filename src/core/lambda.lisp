@@ -1,4 +1,4 @@
-;;;; Last modified: 2014-06-27 22:40:17 tkych
+;;;; Last modified: 2014-06-29 16:20:06 tkych
 
 ;; cl-plus/src/core/lambda.lisp
 
@@ -196,7 +196,7 @@ References
                        (when buff
                          (force-buff))
                        (setf paras (mapcar (lambda (c) (read-from-string (string c)))
-                                          buff)))
+                                           buff)))
                    (loop-finish))
                   ((#\.)
                    (setf piriod-exists? t)
@@ -257,7 +257,7 @@ References
                   *shorthand-lambda-parameter-prefix* para))
          (error-out-of-parameters-limit (num)
            (error "~D is out of *SHORTHAND-LAMBDA-PARAMETERS-LIMIT*: ~D"
-                   num *shorthand-lambda-parameters-limit*)))
+                  num *shorthand-lambda-parameters-limit*)))
     (let ((char (peek-char nil stream t #\Newline t)))
       (if (digit-char-p char)
 
@@ -278,11 +278,11 @@ References
             ((#\a #\A)                  ; @A, @ALL
              (let ((para (read stream)))
                (switch (para :test #'string-equal)
-                 ("A"     (setf *all-parameter-exists?* t)
-                          (intern-parameter "ALL"))
+                 ("A"   (setf *all-parameter-exists?* t)
+                        (intern-parameter "ALL"))
                  ("ALL" (setf *all-parameter-exists?* t)
-                          (intern-parameter "ALL"))
-                 (t       (error-unknown-parameter para)))))
+                        (intern-parameter "ALL"))
+                 (t     (error-unknown-parameter para)))))
             
             ((#\r #\R)                  ; @R, @REST
              (let ((para (read stream)))
@@ -296,11 +296,11 @@ References
             ((#\m #\M)                  ; @M, @ME
              (let ((para (read stream)))
                (switch (para :test #'string-equal)
-                 ("M"    (setf *named-lambda?* t)
-                         (intern-parameter "ME"))
+                 ("M"  (setf *named-lambda?* t)
+                       (intern-parameter "ME"))
                  ("ME" (setf *named-lambda?* t)
-                         (intern-parameter "ME"))
-                 (t      (error-unknown-parameter para)))))
+                       (intern-parameter "ME"))
+                 (t    (error-unknown-parameter para)))))
             
             (t (error-unknown-parameter (read stream))))))))
 
