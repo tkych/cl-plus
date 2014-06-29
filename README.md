@@ -1,4 +1,4 @@
-Last modified: 2014-06-29 11:02:27 tkych
+Last modified: 2014-06-29 11:43:40 tkych
 
 Version: 0.0.54 (alpha)
 
@@ -129,9 +129,9 @@ Examples
  ;; TO, generailzed COERCE.
  * (to 'list "string") => (#\s #\t #\r #\i #\n #\g)
  
- * (let ((log (to 'string #p"./CHANGELOG")))
-     (subseq log 0 (position #\Newline log)))
-   => "Version 0.0.54"
+ * (let ((txt (to 'txting #p"./README.md")))
+     (subseq txt 0 (position #\Newline txt)))
+   => "Last modified: 2014-06-29 11:02:27 tkych"
  
  ;; Sub-Packages:
  ;; SRFI-45: Primitives for Expressing Iterative Lazy Algorithms.
