@@ -150,8 +150,11 @@ Examples
  ;; ADD, generailzed CONCATENATE.
  * (add "Li" '(#\s #\p)) => "Lisp"
 
- * (add #{:Roma "Varro"} #{:Carthage "Hannibal"}) => #{:ROMA "Varro"  :CARTHAGE "Hannibal"}
- * (add * #{:Roma "Scipio"})                      => #{:ROMA "Scipio" :CARTHAGE "Hannibal"}
+ * (add #{:Roma "Varro"} #{:Carthage "Hannibal"})
+   => #{:ROMA "Varro"  :CARTHAGE "Hannibal"}
+
+ * (add * #{:Roma "Scipio"})
+   => #{:ROMA "Scipio" :CARTHAGE "Hannibal"}
 
  * (apply #'add (interpose ", " '("lazy" "delay" "eager")))
    => "lazy, delay, eager"
