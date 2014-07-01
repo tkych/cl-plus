@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 11:25:08 tkych
-
-;; cl-plus/src/core/lazy-sequence.lisp
+;;;; cl-plus/src/core/lazy-sequence.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -588,7 +586,7 @@ Examples
                                                 (mk-lseq (pipe-range (+ xi diff) (1- xn) diff))))
                                         (if-let (ratio (geometric-progression-p contents))
                                           ;; UGLY
-                                          (cond ( ;; Monotinic Increase case:
+                                          (cond ( ;; Monotonically Increasing case:
                                                  (<= 1 ratio)
                                                  (if (< xn xi)
                                                      (error "Can't parse.")                                                       
@@ -596,7 +594,7 @@ Examples
                                                                (lambda (x) (<= x xn))
                                                                (pipe-iterate (lambda (term) (* ratio term))
                                                                              (* xi ratio))))))
-                                                ( ;; Monotinic Decrease case:
+                                                ( ;; Monotonically Decreasing case:
                                                  (< 0 ratio 1) ; ensure ratio /= 0.
                                                  (if (< xi xn)
                                                      (error "Can't parse.")
@@ -604,7 +602,7 @@ Examples
                                                                (lambda (x) (<= xn x))
                                                                (pipe-iterate (lambda (term) (* ratio term))
                                                                              (* xi ratio))))))
-                                                ( ;; Oscillating Decrease case:
+                                                ( ;; Oscillational Decreasing case:
                                                  (<= -1 ratio) ; ensure ratio < 0.
                                                  (let ((more? t))
                                                    (if (plusp xn)
@@ -631,7 +629,7 @@ Examples
                                                                  (pipe-iterate (lambda (term) (* ratio term))
                                                                                (* xi ratio)))))))
                                                 (t
-                                                 ;; Oscillating Increase case:
+                                                 ;; Oscillational Increasing case:
                                                  ;; (< ratio -1)
                                                  (let ((more? t))
                                                    (if (plusp xn)
@@ -1170,6 +1168,10 @@ Examples
                            (%%inducer (append1 (rest prevs) next)))))))
     (make-lazy-seq seeds (%%inducer seeds))))
 
+;; MEMO:
+;;  ? mathematical-induction
+;;  ? logical-deduction
+;;  ? induct
 (defun induce (successor-function &rest seeds)
   (check-type successor-function (or symbol function))
   (case (length seeds)
@@ -1177,7 +1179,7 @@ Examples
     (1 (%iterate successor-function (first seeds)))
     (t (apply #'%induce successor-function seeds))))
 
-#-common-lisp
+#+nil
 (define-compiler-macro induce (&whole form successor-function &rest seeds)
   (if (listp seeds)
       (case (length seeds)
@@ -1887,26 +1889,6 @@ LAZY-DROP n lazy-sequence => result
   (check-type lseq lazy-sequence)
   (reduce fn (lazy-take :all lseq) :initial-value initial-value))
 
-
-#+nil
-(defun pipe-scan (function base pipe)
-  (labels ((%pipe-scan (base pipe)
-             (lazy
-              (if (pipe-null pipe)
-                  (pipe base)
-                  (pipe-cons base
-                             (%pipe-scan (funcall function
-                                                  base (pipe-car pipe))
-                                         (pipe-cdr pipe)))))))
-    (%pipe-scan base pipe)))
-
-#+nil
-(defun lazy-scan (fn lseq &optional key initial-value start end)
-  (check-type fn   (or symbol function))
-  (check-type lseq lazy-sequence)
-  (reduce fn (lazy-take :all lseq) :initial-value initial-value))
-
-
 (defun lazy-zip (lseq1 lseq2 &rest more-lseqs)
   (check-type lseq1 lazy-sequence)
   (check-type lseq2 lazy-sequence)
@@ -2027,9 +2009,6 @@ Examples (from srfi-41)
             (rec count
                  (cl-plus.src.srfi.srfi-41::kar kons)
                  (cl-plus.src.srfi.srfi-41::kdr kons)))))))
-
-;; (defun repeat-flow (count object)
-;;   (check-type count (integer 0 *)))
 
 (defun replicate-flow (object)
   (labels ((%repeater ()
