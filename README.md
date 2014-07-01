@@ -1,8 +1,4 @@
-Last modified: 2014-06-29 11:43:40 tkych
-
 Version: 0.0.54 (alpha)
-
-<!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/README.md") -->
 
 
 ((CL+)) : Interface for Prototyping
@@ -35,20 +31,23 @@ Features
 --------
 
  1. Read-macros: ^, #{} and #[].
- 2. Library-Packages: *CDR-5*, *CDR-8*, *CLRFI-1*, *SRFI-45* and *SRFI-41*, ...
+ 2. Abstract data types: *SEQUENS*, *TABULA* and *BUXIS*. 
  3. Lazy data structures: *PROMISE*, *PIPE*, *LAZY-SEQUENCE* and *LAZY-FLOW*.
- 4. Abstract data types: *SEQUENS*, *TABULA* and *BUXIS*.
- 5. Polymorphics: *TO*, *REF*, *ADD*, *COPY*, *EMPTYP*, *SIZE*, *EQUALS* and *COMPARE*.
+ 4. Sub-Packages:
+     - Core: *LAZY-SEQUENCE*, *SEQUENS*, *TABULA*, *BUXIS*, ...
+     - Library: *CDR-5*, *CDR-8*, *CLRFI-1*, *SRFI-45* and *SRFI-41*, ...
+ 5. Extensible Polymorphic Operators: *TO*, *REF*, *ADD*, *COPY*, *EMPTYP*, *SIZE*, *EQUALS* and *COMPARE*.
  6. Utilities for Functional Programming Style: $, $*, <<, >>, &, v.
 
-For more details, see [cl-plus/doc/features.md](https://github.com/tkych/cl-plus/blob/master/doc/features.md)
+For more details, please see [cl-plus/doc/features.md](https://github.com/tkych/cl-plus/blob/master/doc/features.md), [cl-plus/doc/compare-with-cl.md](https://github.com/tkych/cl-plus/blob/master/doc/compare-with-cl.md).
 
 
 Examples
 --------
 
+#### ^shorthand-lambda:
+
 ```lisp
- ;; ^ is a read macro for shorthand-lambda
  ;; Church style:
  * (mapcar ^xy(+ x y)      '(1 2 3) '(41 40 39)) => (42 42 42)
  * (mapcar ^x0.y0(+ x0 y0) '(1 2 3) '(41 40 39)) => (42 42 42)
@@ -64,16 +63,24 @@ Examples
  * (induce ^xyz(+ x y z) 0 0 1) => #[0 0 1 ..]
  * (take 10 *)                  => (0 0 1 1 2 4 7 13 24 44)
  * **                           => #[0 0 1 1 2 4 7 13 24 44 ..]
+```
 
- ;; #[] is a read macro for lazy-sequences:
+
+#### #[read macro for lazy-sequence]:
+
+```lisp
  * (take 10 #[0 ..])                 => (0 1 2 3 4 5 6 7 8 9)
  * (take 10 #[0 3 ..])               => (0 3 6 9 12 15 18 21 24 27)
  * (take 10 #[1 2 4 ..])             => (1 2 4 8 16 32 64 128 256 512)
  * (take :all #[1 .. 10])            => (1 2 3 4 5 6 7 8 9 10)
  * (take :all #[#\a .. #\z] 'string) => "abcdefghijklmnopqrstuvwxyz"
  * (reduce* '+ #[1..100])            => 5050
+```
 
- ;; LAZY-FOR, lazy-sequence facility:
+
+#### LAZY-FOR/LFOR, lazy-sequence facility:
+
+```lisp
  * (take 10 (lazy-for x from 1 by 2)) => (1 3 5 7 9 11 13 15 17 19)
 
  * (take 10 (lazy-for (* x x)
@@ -85,12 +92,27 @@ Examples
              (x replicate :foo :bar :baz :quux)
              (y in #[1 2 4 ..])))
    => ((:FOO . 1) (:BAR . 2) (:BAZ . 4) (:QUUX . 8) (:FOO . 16) (:BAR . 32))
+```
 
- ;; #{} is a read macro for hash-tables:
+
+#### #{read macro for hash-table}:
+
+```lisp
+ * #{:foo 0 :bar 1 :baz 2}     => #{:foo 0 :bar 1 :baz}
+ * (hash-table-test #{:foo 0})  => EQUAL
+ * (hash-table-test #2{:foo 0}) => EQ
+ * (hash-table-test #3{:foo 0}) => EQL
+ * (hash-table-test #5{:foo 0}) => EQUAL
+ * (hash-table-test #6{:foo 0}) => EQUALP
+```
+
+
+#### *-Suffix-Functions for BUXIS (hash-table, sequence, lazy-sequence and array):
+
+```lisp
  * (map* t '1+ #{:foo 0 :bar 1 :baz 2 :quux 3})
    => #{:BAR 2 :BAZ 3 :QUUX 4 :FOO 1}
 
- ;; *-Suffix-Functions for BUXIS (hash-table, sequence, lazy-sequence and array)
  * (reduce* '+ #{:foo 0 :bar 1 :baz 2 :quux 3})
    => 6
 
@@ -102,8 +124,12 @@ Examples
 
  * (collect-if* 'evenp #[0..] :from 10 :count 4)
    => (10 12 14 16)
+```
 
- ;; +-Suffix-Functions for TABULA (hash-table, alist and plist):
+
+#### +-Suffix-Functions for TABULA (hash-table, alist and plist): 
+
+```lisp
  * (remove-if-not+ ^kv(and (oddp v) (= 3 (length (string k))))
                    #{:foo 0 :bar 1 :baz 2 :quux 3})
    => #{:BAR 1}
@@ -115,8 +141,12 @@ Examples
  * (remove-if-not+ ^kv(and (oddp v) (= 3 (length (string k))))
                    '((:foo . 0) (:bar . 1) (:baz . 2) (:quux . 3)))
    => ((:BAR . 1))
+```
 
- ;; Polymorphics: Extensible Polymorphic Operators
+
+#### Extensible Polymorphic Operators: 
+
+```lisp
  ;; ADD, generailzed CONCATENATE.
  * (add "Li" '(#\s #\p)) => "Lisp"
 
@@ -132,8 +162,12 @@ Examples
  * (let ((txt (to 'txting #p"./README.md")))
      (subseq txt 0 (position #\Newline txt)))
    => "Last modified: 2014-06-29 11:02:27 tkych"
- 
- ;; Sub-Packages:
+``` 
+
+
+#### Sub-Packages:
+
+```lisp
  ;; SRFI-45: Primitives for Expressing Iterative Lazy Algorithms.
  * (use-package :cl+srfi-45)
  * (defvar *the-answer*
@@ -142,8 +176,12 @@ Examples
  * (promisep *the-answer*)      => T
  * (force *the-answer*)         => 42
  * *the-answer*                 => [42]
+```
 
- ;; Utilities for Functional Style Programming: $, $*, <<, >>, &, v
+
+#### Utilities for Functional Style Programming: $, $*, <<, >>, &, v:
+
+```lisp
  ;; Function Application: $, $*
  * ($ repeat 2 $* * $ mapcar ^(* @ 3) $ mapcar 'max '(1 2) '(4 5))
    => (180 180)
@@ -166,8 +204,6 @@ Examples
                 '(42 3.9 -3 -66 -9))
    => (42 -66)
 ```
-
-For more details, see [cl-plus/doc/features.md](https://github.com/tkych/cl-plus/blob/master/doc/features.md)
 
 
 Depends-on
@@ -194,7 +230,7 @@ Installation
  2. CL-USER> `(ql:quickload :cl-plus)`
 
 
-#### Starting
+#### Usage:
 
  0. CL-USER> `(in-package :cl+user)`
  1. CL+USER> `(named-readtables:in-readtable :cl+)` ; for ^, #{}, #[]
@@ -210,19 +246,19 @@ or
  0. CL-USER> `(import <CL+SUB-PACKAGE-NAME>:<SYMBOL>)` ; e.g., `(import 'cl+lazy-sequence:induce)`
 
 
-#### Testing
+#### Test:
 
  0. CL-USER> `(ql:quickload :cl-plus-test)`
  1. CL-USER> `(cl-plus-test:run-tests)` or `(cl+t:run-tests)`
 
 
-##### Note
+##### Note:
 
-If you don't want to run all tests, you can run only the particular suites by supplying the name of suite to `run-tests`.
+If you don't need to run all tests, you can run only the particular suites by supplying the name of suite to `run-tests`.
 e.g., `(cl+t:run-tests 'cl+t:?lazy-sequence 'cl+t:?lambda)`
 
 
-##### Status
+##### Status:
 
  - Full tested: ccl, sbcl on linux.
  - Partial tested: clisp, ecl, abcl on linux.
@@ -255,4 +291,4 @@ Copyright
  - Copyright (C) Philip L. Bewig (2007)  (for srfi-41.lisp).
 
 
-<!-- ============================================================= -->
+<!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/README.md") -->
