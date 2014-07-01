@@ -22,7 +22,7 @@ Hash-Table
 ```
 
 
-#### Check condition.
+#### Check entries.
 
 ```lisp
 ;; CL
@@ -89,21 +89,6 @@ Hash-Table
 (find-if+ ^kv(stringp k) *ht*)
 ```
 
-
-Alist
------
-
-```lisp
-
-```
-
-
-
-Plist
------
-
-
-
 Lazy-Sequence
 -------------
 
@@ -145,12 +130,6 @@ Lazy-Sequence
 ;; CL+CL
 (map* 'list ^bp(expt b p) #[1 2 4..] #[1..10])
 ```
-
-
-Array
------
-
-
 
 
 *===> TO BE CONTINUED*

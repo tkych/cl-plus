@@ -1,6 +1,5 @@
 Version: 0.0.54 (alpha)
 
-
 ((CL+)) : Interface for Prototyping
 ===================================
 
@@ -98,7 +97,7 @@ Examples
 #### #{read macro for hash-table}:
 
 ```lisp
- * #{:foo 0 :bar 1 :baz 2}     => #{:foo 0 :bar 1 :baz}
+ * #{:foo 0 :bar 1 :baz 2}      => #{:foo 0 :bar 1 :baz}
  * (hash-table-test #{:foo 0})  => EQUAL
  * (hash-table-test #2{:foo 0}) => EQ
  * (hash-table-test #3{:foo 0}) => EQL
