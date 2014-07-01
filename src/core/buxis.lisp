@@ -1110,41 +1110,33 @@ References
          (loop :for v :being :the :hash-values :of buxis
                :count (funcall test item v))))
 
-    ;; TODO:
     (array
      (check-type start (or list array-index))
      (check-type end   (or list array-index))
      (when (listp start)
-       (setf start (the array-index (apply #'array-row-major-index buxis start))))
-     (when (and end (listp end))
-       (setf end (the array-index (apply #'array-row-major-index buxis end))))
+       (setf start (apply #'array-row-major-index buxis start)))
+     (if (not end)
+         (setf end (array-total-size buxis))
+         (when (listp end)
+           (setf end (apply #'array-row-major-index buxis end))))
      (when (and end (< end start))
        (error "[~S , ~S) is bad interval." start end))
-     
-     (setf end (the array-index (or end (array-total-size buxis))))
-     (setf key (the (or function symbol) (or key #'identity)))
-     (if from-end
-         (do ((i (1- end) (1- i))
-              (count 0 (if (funcall test item (funcall key (row-major-aref buxis i)))
-                           (1+ count)
-                           count)))
-             ((< i start) count)
-           (declare (type array-index-1 i count)))
-         ;; (loop :for i :of-type array-index-1
-         ;;       :downfrom (1- end) :to start
-         ;;       :for v := (row-major-aref buxis i)
-         ;;       :count (funcall test item (funcall key v)))
-         (do ((i start (1+ i))
-              (count 0 (if (funcall test item (funcall key (row-major-aref buxis i)))
-                           (1+ count)
-                           count)))
-             ((<= end i) count)
-           (declare (type array-index i count)))
-         ;; (loop :for i :of-type array-index
-         ;;       :from start :below end
-         ;;       :for v := (row-major-aref buxis i)
-         ;;       :count (funcall test item (funcall key v)))
-         ))))
+     (if key
+         (if from-end
+             (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                   :for v := (row-major-aref buxis i)
+                   :count (funcall test item (funcall key v)))
+             (loop :for i :of-type array-index :from start :below end
+                   :for v := (row-major-aref buxis i)
+                   :count (funcall test item (funcall key v))))
+         ;; no-key:
+         (if from-end
+             (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                   :for v := (row-major-aref buxis i)
+                   :count (funcall test item v))
+             (loop :for i :of-type array-index :from start :below end
+                   :for v := (row-major-aref buxis i)
+                   :count (funcall test item v)))))))
 
 (setf (documentation 'count* 'function) "
 COUNT* item buxis &key key (test 'eql) from-end (start 0) end => result

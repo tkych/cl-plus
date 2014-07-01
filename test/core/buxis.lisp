@@ -3308,15 +3308,13 @@
   (signals type-error (count* 42 '(0 1 2) :start -1))
   (signals type-error (count* 42 '(0 1 2) :start nil))
   (signals type-error (count* 42 '(0 1 2) :start '(0 1)))
-  (is-true (count* 4 #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (count* 42 '(0 1 2) :end -1))
   (signals type-error (count* 42 '(0 1 2) :end '(0 1)))
-  (is-true (count* 2 #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (count* 42 '(0 1 2) :start 42 :end 24))
-  (is-true (count* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error      (count* 42 '(0 1 2) :start 42 :end 24))
+  (finishes (count* 4 #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (count* 2 #2A((0 1 2) (3 4 5)) :end   '(1 1)))
+  (finishes (count* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1)))
+  (signals error (count* 2 #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1))))
 
 
 (test ?count*.list
@@ -3397,10 +3395,14 @@
 
 
 (test ?count*.array
-  (is (= (count* 42 #2A((1 42 3) (42 5 6)) :start '(0 1))
-         2))
-  (is (= (count* 42 #2A((1 42 3) (42 5 6)) :start '(1 2))
-         0))
+  (is-= (count* 42 #2A((1 42 3) (42 5 6)) :start '(0 1))
+        2)
+  (is-= (count* 42 #2A((1 42 3) (42 5 6)) :start '(1 2))
+        0)
+  (is-= (count* 42 #2A((1 42 3) (42 5 6)) :end '(0 2))
+        1)
+  (is-= (count* 42 #2A((1 42 3) (42 5 6)) :start '(1 0) :end '(1 1))
+        1)
   
   (for-all ((lst (gen-list :elements (gen-integer :min -1 :max 1))))
     (let* ((dim0 3)
@@ -3408,29 +3410,28 @@
            (init (loop :repeat dim0 :collect lst))
            (ary  (make-array (list dim0 dim1) :initial-contents init)))
       
-      (is (= (count* 0 ary)
-             (* dim0 (count 0 lst))))
+      (is-= (count* 0 ary)
+            (* dim0 (count 0 lst)))
 
-      (is (= (count* 0 ary :key #'1+)
-             (* dim0 (count 0 lst :key #'1+))))
-      
-      (let ((rand (random (1+ (* dim0 dim1)))))
-        (unless (zerop rand)
-          (is (= (count* 0 ary :start rand)
-                 (loop :for i :from rand :below (* dim0 dim1)
-                       :count (= 0 (row-major-aref ary i)))))
-          
-          (is (= (count* 0 ary :end rand)
-                 (loop :for i :from 0 :below rand
-                       :count (= 0 (row-major-aref ary i)))))
+      (is-= (count* 0 ary :key #'1+)
+            (* dim0 (count 0 lst :key #'1+)))
 
-          (let ((start (1+ (random rand))))
-            (is (= (count* 0 ary :start start :end rand)
-                   (loop :for i :from start :below rand
-                         :count (= 0 (row-major-aref ary i))))))))
+      (let ((rand (random (max 1 (* dim0 dim1)))))
+        (is-= (count* 0 ary :start rand)
+              (loop :for i :from rand :below (* dim0 dim1)
+                    :count (= 0 (row-major-aref ary i))))
+        
+        (is-= (count* 0 ary :end rand)
+              (loop :for i :from 0 :below rand
+                    :count (= 0 (row-major-aref ary i))))
 
-      (is (= (count* 0 ary :from-end t)
-             (count* 0 ary))))))
+        (let ((start (random (max 1 rand))))
+          (is-= (count* 0 ary :start start :end rand)
+                (loop :for i :from start :below rand
+                      :count (= 0 (row-major-aref ary i))))))
+
+      (is-= (count* 0 ary :from-end t)
+            (count* 0 ary)))))
 
 
 (test ?count*.hash-table
