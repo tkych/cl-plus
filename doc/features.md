@@ -1,4 +1,4 @@
-Last modified: 2014-06-29 16:10:01 tkych
+Last modified: 2014-07-01 12:26:18 tkych
 
 <!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/doc/features.md") -->
 
@@ -359,15 +359,8 @@ Polymorphes is a collection of generic functions, user-extensible and user-modif
 
 #### 5.1 *TO*: abstraction from `coerce`.
 
-```lisp
- (let ((txt (to 'txting #p"./README.md")))
-   (subseq txt 0 (position #\Newline txt)))
- => "Last modified: 2014-06-29 11:02:27 tkych"
-```
-
 
 #### 5.2 *REF*: generic refer function.
-
 
 
 #### 5.3 *ADD*: abstraction from `+` and `concatenate`.

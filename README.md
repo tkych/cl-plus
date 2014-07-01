@@ -161,10 +161,10 @@ Examples
 
  ;; TO, generailzed COERCE.
  * (to 'list "string") => (#\s #\t #\r #\i #\n #\g)
- 
- * (let ((txt (to 'txting #p"./README.md")))
+
+ * (let ((txt (to 'string #p"./.gitignore")))
      (subseq txt 0 (position #\Newline txt)))
-   => "Last modified: 2014-06-29 11:02:27 tkych"
+   => "*.fasl"
 ``` 
 
 
