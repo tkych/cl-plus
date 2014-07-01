@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:48:26 tkych
-
-;; cl-plus/src/core/sequence.lisp
+;;;; cl-plus/src/core/sequence.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -35,7 +33,6 @@ Functions
  - split-if
  - split-if-not
  - split-at
-
 ")
   (:export #:sequencep
            #:repeat
@@ -176,25 +173,6 @@ cf. alexandria:MAP-PERMUTATIONS
 ;;--------------------------------------------------------------------
 ;; cf. alexandria:MAP-COMBINATIONS
 
-
-;; (map-combinations 'print '(0 1 2) :length 2 :start 1)
-;; prints
-;; ; (0 1)
-;;
-;; However, it should print
-;; ; (1 2)
-;;
-;; MODIFIED: combination -> (subseq sequence start end)
-
-
-#+#:comment "
-Calls FUNCTION with each combination of LENGTH constructable from the
-elements of the subsequence of SEQUENCE delimited by START and END. START
-defaults to 0, END to length of SEQUENCE, and LENGTH to the length of the
-delimited subsequence. (So unless LENGTH is specified there is only a single
-combination, which has the same elements as the delimited subsequence.)
-"
-
 ;; TODO
 ;; ----
 ;; * BE CONSISTANT ORDER:
@@ -215,7 +193,12 @@ combination, which has the same elements as the delimited subsequence.)
          (seq    (subseq sequence 0 count))
          (result '()))
     (if (= count len)
-        ;; modified: seq -> (subseq sequence start end)
+        ;; MEMO: combination -> (subseq sequence start end)
+        ;; (alexandria:map-combinations 'print '(0 1 2) :length 2 :start 1)
+        ;; prints
+        ;; ; (0 1)
+        ;; However, it should print
+        ;; ; (1 2)
         (push (subseq sequence start end) result)
         (etypecase sequence
           (list

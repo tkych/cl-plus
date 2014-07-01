@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:04:57 tkych
-
-;; cl-plus/src/core/function.lisp
+;;;; cl-plus/src/core/function.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -9,9 +7,6 @@
 ;; TODO
 ;; ----
 ;;  OPTIMIZE: compose -> funcall, apply
-
-;; BUG
-;; ---
 
 ;;====================================================================
 ;; Utilities for Functional Programming Style
@@ -80,12 +75,11 @@ References
 ----------
 
  [0] Simon Marlow ed.,
-     Haskell 2010 Language Report,
-     6.2 Strict Evaluation, p. 75
-     
- [1] Gauche
-     
+     Haskell 2010 Language Report, 6.2 Strict Evaluation, p.75,
+     https://www.haskell.org/onlinereport/haskell2010/
 
+ [1] Gauche, Gauche Users' Reference, 4.3 Making Procedures.
+     http://practical-scheme.net/gauche/man/gauche-refe_24.html#Making-Procedures
 ")
   (:nicknames #:cl+function)
   (:export #:$  #:$*

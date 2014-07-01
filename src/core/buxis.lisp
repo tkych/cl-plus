@@ -909,7 +909,7 @@ Notes
 
 (defun reduce* (function buxis &key key (initial-value nil ivp) from-end (start 0) end)
   (check-type function (or symbol function))
-  (check-type key      (or null symbol function))
+  (check-type key      (or symbol function))
 
   (etypecase buxis
     (sequence
