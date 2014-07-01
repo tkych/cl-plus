@@ -3479,15 +3479,13 @@
   (signals type-error (count-if* #'oddp '(0 1 2) :start -1))
   (signals type-error (count-if* #'oddp '(0 1 2) :start nil))
   (signals type-error (count-if* #'oddp '(0 1 2) :start '(0 1)))
-  (is-true (count-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (count-if* #'oddp '(0 1 2) :end -1))
   (signals type-error (count-if* #'oddp '(0 1 2) :end '(0 1)))
-  (is-true (count-if* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (count-if* #'oddp '(0 1 2) :start 42 :end 24))
-  (is-true (count-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error      (count-if* #'oddp '(0 1 2) :start 42 :end 24))
+  (finishes (count-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (count-if* #'oddp #2A((0 1 2) (3 4 5)) :end   '(1 1)))
+  (finishes (count-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1)))
+  (signals error (count-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1))))
 
 
 (test ?count-if*.list
@@ -3568,10 +3566,14 @@
 
 
 (test ?count-if*.array
-  (is (= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :start '(0 1))
-         2))
-  (is (= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :start '(1 2))
-         0))
+  (is-= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :start '(0 1))
+        2)
+  (is-= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :start '(1 2))
+        0)
+  (is-= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :end '(0 2))
+        1)
+  (is-= (count-if* #'evenp #2A((1 42 1) (42 1 1)) :start '(1 0) :end '(1 1))
+        1)
   
   (for-all ((lst (gen-list)))
     (let* ((dim0 3)
@@ -3579,29 +3581,28 @@
            (init (loop :repeat dim0 :collect lst))
            (ary  (make-array (list dim0 dim1) :initial-contents init)))
       
-      (is (= (count-if* #'oddp ary)
-             (* dim0 (count-if #'oddp lst))))
+      (is-= (count-if* #'oddp ary)
+            (* dim0 (count-if #'oddp lst)))
 
-      (is (= (count-if* #'oddp ary :key #'1+)
-             (* dim0 (count-if #'oddp lst :key #'1+))))
-      
-      (let ((rand (random (1+ (* dim0 dim1)))))
-        (unless (zerop rand)
-          (is (= (count-if* #'oddp ary :start rand)
-                 (loop :for i :from rand :below (* dim0 dim1)
-                       :count (funcall #'oddp (row-major-aref ary i)))))
-          
-          (is (= (count-if* #'oddp ary :end rand)
-                 (loop :for i :from 0 :below rand
-                       :count (funcall #'oddp (row-major-aref ary i)))))
+      (is-= (count-if* #'oddp ary :key #'1+)
+            (* dim0 (count-if #'oddp lst :key #'1+)))
 
-          (let ((start (1+ (random rand))))
-            (is (= (count-if* #'oddp ary :start start :end rand)
-                   (loop :for i :from start :below rand
-                         :count (funcall #'oddp (row-major-aref ary i))))))))
+      (let ((rand (random (max 1 (* dim0 dim1)))))
+        (is-= (count-if* #'oddp ary :start rand)
+              (loop :for i :from rand :below (* dim0 dim1)
+                    :count (funcall #'oddp (row-major-aref ary i))))
+        
+        (is-= (count-if* #'oddp ary :end rand)
+              (loop :for i :from 0 :below rand
+                    :count (funcall #'oddp (row-major-aref ary i))))
 
-      (is (= (count-if* #'oddp ary :from-end t)
-             (count-if* #'oddp ary))))))
+        (let ((start (random (max 1 rand))))
+          (is-= (count-if* #'oddp ary :start start :end rand)
+                (loop :for i :from start :below rand
+                      :count (funcall #'oddp (row-major-aref ary i))))))
+
+      (is-= (count-if* #'oddp ary :from-end t)
+            (count-if* #'oddp ary)))))
 
 
 (test ?count-if*.hash-table
