@@ -4003,15 +4003,13 @@
   (signals type-error (find-if* #'oddp '(0 1 2) :start -1))
   (signals type-error (find-if* #'oddp '(0 1 2) :start nil))
   (signals type-error (find-if* #'oddp '(0 1 2) :start '(0 1)))
-  (is-true (find-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (find-if* #'oddp '(0 1 2) :end -1))
   (signals type-error (find-if* #'oddp '(0 1 2) :end '(0 1)))
-  (is-true (find-if* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
   (signals simple-error (find-if* #'oddp '(0 1 2) :start 42 :end 24))
-  (is-true (find-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (finishes (find-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (find-if* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (find-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1)))
+  (signals error (find-if* #'oddp #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1))))
 
 
 (test ?find-if*.list
@@ -4070,32 +4068,33 @@
 
 (test ?find-if*.lazy-sequence
   (for-all ((lst (gen-list :length (gen-integer :min 0 :max 5))))
-    (is (eql (find-if* #'oddp (lfor x :in lst))
-             (find-if  #'oddp lst)))
+    (is-eql (find-if* #'oddp (lfor x :in lst))
+            (find-if  #'oddp lst))
     
-    (is (eql (find-if* #'oddp (lfor x :in lst) :key #'1+)
-             (find-if  #'oddp lst :key #'1+)))
+    (is-eql (find-if* #'oddp (lfor x :in lst) :key #'1+)
+            (find-if  #'oddp lst :key #'1+))
     
-    (unless (null lst)
-      (let ((start (random (length lst))))
-        (is (eql (find-if* #'oddp (lfor x :in lst) :start start)
-                 (find-if  #'oddp lst :start start))))
+    (let ((rand (random (max 1 (length lst)))))
+      (is-eql (find-if* #'oddp (lfor x :in lst) :start rand)
+              (find-if  #'oddp lst :start rand))
       
-      (let ((end (random (length lst))))
-        (is (eql (find-if* #'oddp (lfor x :in lst) :end end)
-                 (find-if  #'oddp lst :end end))))
+      (is-eql (find-if* #'oddp (lfor x :in lst) :end rand)
+              (find-if  #'oddp lst :end rand))
 
-      (let* ((end   (random (length lst)))
-             (start (random (1+ end))))
-        (is (eql (find-if* #'oddp (lfor x :in lst) :start start :end end)
-                 (find-if  #'oddp lst :start start :end end)))))))
+      (let ((start (random (max 1 rand))))
+        (is-eql (find-if* #'oddp (lfor x :in lst) :start start :end rand)
+                (find-if  #'oddp lst :start start :end rand))))))
 
 
 (test ?find-if*.array
-  (is (eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :start '(0 1))
-           42))
-  (is (eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :start '(0 2))
-           nil))
+  (is-eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :start '(0 1))
+          42)
+  (is-eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :start '(0 2))
+          nil)
+  (is-eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :end '(0 2))
+          42)
+  (is-eql (find-if* #'evenp #2A((1 42 1) (1 1 1)) :start '(0 1) :end '(0 1))
+          nil)
   
   (for-all ((lst (gen-list :length (gen-integer :min 0 :max 5))))
     (let* ((dim0 3)
@@ -4103,34 +4102,33 @@
            (init (loop :repeat dim0 :collect lst))
            (ary  (make-array (list dim0 dim1) :initial-contents init)))
       
-      (is (eql (find-if* #'oddp ary)
-               (find-if  #'oddp lst)))
+      (is-eql (find-if* #'oddp ary)
+              (find-if  #'oddp lst))
 
-      (is (eql (find-if* #'oddp ary :key #'1+)
-               (find-if  #'oddp lst :key #'1+)))
+      (is-eql (find-if* #'oddp ary :key #'1+)
+              (find-if  #'oddp lst :key #'1+))
       
-      (let ((rand (random (1+ (* dim0 dim1)))))
-        (unless (zerop rand)
-          (is (eql (find-if* #'oddp ary :start rand)
-                   (loop :for i :from rand :below (* dim0 dim1)
-                         :when (funcall #'oddp (row-major-aref ary i))
-                           :return (row-major-aref ary i))))
-          
-          (is (eql (find-if* #'oddp ary :end rand)
-                   (loop :for i :from 0 :below rand
-                         :when (funcall #'oddp (row-major-aref ary i))
-                           :return (row-major-aref ary i))))
+      (let ((rand (random (max 1 (* dim0 dim1)))))
+        (is-eql (find-if* #'oddp ary :start rand)
+                (loop :for i :from rand :below (* dim0 dim1)
+                      :when (funcall #'oddp (row-major-aref ary i))
+                        :return (row-major-aref ary i)))
+        
+        (is-eql (find-if* #'oddp ary :end rand)
+                (loop :for i :from 0 :below rand
+                      :when (funcall #'oddp (row-major-aref ary i))
+                        :return (row-major-aref ary i)))
 
-          (let ((start (1+ (random rand))))
-            (is (eql (find-if* #'oddp ary :start start :end rand)
-                     (loop :for i :from start :below rand
-                           :when (funcall #'oddp (row-major-aref ary i))
-                             :return (row-major-aref ary i)))))))
+        (let ((start (random (max 1 rand))))
+          (is-eql (find-if* #'oddp ary :start start :end rand)
+                  (loop :for i :from start :below rand
+                        :when (funcall #'oddp (row-major-aref ary i))
+                          :return (row-major-aref ary i)))))
 
-      (is (eql (find-if* #'oddp ary :from-end t)
-               (loop :for i :downfrom (1- (array-total-size ary)) :to 0
-                     :when (funcall #'oddp (row-major-aref ary i))
-                       :return (row-major-aref ary i)))))))
+      (is-eql (find-if* #'oddp ary :from-end t)
+              (loop :for i :downfrom (1- (array-total-size ary)) :to 0
+                    :when (funcall #'oddp (row-major-aref ary i))
+                      :return (row-major-aref ary i))))))
 
 
 (test ?find-if*.hash-table
@@ -4142,33 +4140,33 @@
                     :do (setf (gethash k h) v)
                     :finally (return h))))
       
-      (is (eql (find-if* #'oddp ht)
-               (loop :for v :being :the :hash-values :of ht
-                     :when (oddp v)
-                       :return v)))
+      (is-eql (find-if* #'oddp ht)
+              (loop :for v :being :the :hash-values :of ht
+                    :when (oddp v)
+                      :return v))
       
-      (is (eql (find-if* #'oddp ht :key #'1+)
-               (loop :for v :being :the :hash-values :of ht
-                     :when (oddp (1+ v))
-                       :return v)))
+      (is-eql (find-if* #'oddp ht :key #'1+)
+              (loop :for v :being :the :hash-values :of ht
+                    :when (oddp (1+ v))
+                      :return v))
 
       ;; keyword start should be ignored.
-      (is (eql (find-if* #'oddp ht :start 10)
-               (loop :for v :being :the :hash-values :of ht
-                     :when (oddp v)
-                       :return v)))
+      (is-eql (find-if* #'oddp ht :start 10)
+              (loop :for v :being :the :hash-values :of ht
+                    :when (oddp v)
+                      :return v))
       
       ;; keyword end should be ignored.      
-      (is (eql (find-if* #'oddp ht :end 10)
-               (loop :for v :being :the :hash-values :of ht
-                     :when (oddp v)
-                       :return v)))
+      (is-eql (find-if* #'oddp ht :end 10)
+              (loop :for v :being :the :hash-values :of ht
+                    :when (oddp v)
+                      :return v))
       
       ;; keyword from-end should be ignored.
-      (is (eql (find-if* #'oddp ht :from-end t)
-               (loop :for v :being :the :hash-values :of ht
-                     :when (oddp v)
-                       :return v))))))
+      (is-eql (find-if* #'oddp ht :from-end t)
+              (loop :for v :being :the :hash-values :of ht
+                    :when (oddp v)
+                      :return v)))))
 
 
 ;;--------------------------------------------------------------------
