@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:26:58 tkych
-
-;; cl-plus/test/core/tabula.lisp
+;;;; cl-plus/test/core/tabula.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -405,7 +403,7 @@
 (test ?keys.error
   (signals type-error (keys :foo))
   (signals type-error (keys :foo :count -1))
-  (signals type-error (keys :foo :satisfies #()))
+  (signals type-error (keys :foo :when #()))
   (signals type-error (keys :foo :key-test #())))
 
 
@@ -420,7 +418,7 @@
       (is (set-equal (keys ht)
                      ks
                      :test #'=))
-      (is (set-equal (keys ht :satisfies (lambda (k v) (declare (ignore v)) (oddp k)))
+      (is (set-equal (keys ht :when (lambda (k v) (declare (ignore v)) (oddp k)))
                      (remove-if-not #'oddp ks)
                      :test #'=))
       (let ((count (random (max 1 (length ks)))))
@@ -437,7 +435,7 @@
       (is (set-equal (keys alst)
                      ks
                      :test #'=))
-      (is (set-equal (keys alst :satisfies (lambda (k v) (declare (ignore v)) (oddp k)))
+      (is (set-equal (keys alst :when (lambda (k v) (declare (ignore v)) (oddp k)))
                      (remove-if-not #'oddp ks)
                      :test #'=))
       (let ((count (random (max 1 (length ks)))))
@@ -454,7 +452,7 @@
       (is (set-equal (keys plst)
                      ks
                      :test #'=))
-      (is (set-equal (keys plst :satisfies (lambda (k v) (declare (ignore v)) (oddp k)))
+      (is (set-equal (keys plst :when (lambda (k v) (declare (ignore v)) (oddp k)))
                      (remove-if-not #'oddp ks)
                      :test #'=))
       (let ((count (random (max 1 (length ks)))))
@@ -470,7 +468,7 @@
 (test ?vals.error
   (signals type-error (vals :foo))
   (signals type-error (vals :foo :count -1))
-  (signals type-error (vals :foo :satisfies #()))
+  (signals type-error (vals :foo :when #()))
   (signals type-error (vals :foo :key-test #())))
 
 
@@ -484,7 +482,7 @@
       (is (set-equal (vals ht)
                      vs
                      :test #'=))
-      (is (set-equal (vals ht :satisfies (lambda (k v) (declare (ignore k)) (oddp v)))
+      (is (set-equal (vals ht :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
       (let ((count (random (max 1 (length vs)))))
@@ -501,7 +499,7 @@
       (is (set-equal (vals alst)
                      vs
                      :test #'=))
-      (is (set-equal (vals alst :satisfies (lambda (k v) (declare (ignore k)) (oddp v)))
+      (is (set-equal (vals alst :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
       (let ((count (random (max 1 (length vs)))))
@@ -518,7 +516,7 @@
       (is (set-equal (vals plst)
                      vs
                      :test #'=))
-      (is (set-equal (vals plst :satisfies (lambda (k v) (declare (ignore k)) (oddp v)))
+      (is (set-equal (vals plst :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
       (let ((count (random (max 1 (length vs)))))

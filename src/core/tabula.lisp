@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:07:06 tkych
-
-;; cl-plus/src/core/tabula.lisp
+;;;; cl-plus/src/core/tabula.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -876,19 +874,20 @@ Examples
 ;;--------------------------------------------------------------------
 ;; keys
 ;;--------------------------------------------------------------------
+;; TODO: add :unless
 
-(defun keys (tabula &key count satisfies (key-test #'equal))
-  (check-type tabula    tabula)
-  (check-type count     (or null (integer 0 *)))
-  (check-type satisfies (or symbol function))
-  (check-type key-test  (or function symbol))
+(defun keys (tabula &key count when (key-test #'equal))
+  (check-type tabula   tabula)
+  (check-type count    (or null (integer 0 *)))
+  (check-type when     (or symbol function))
+  (check-type key-test (or function symbol))
   (if count
-      (if satisfies
+      (if when
           (etypecase tabula
             (hash-table
              (loop :until (zerop count)
                    :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-                   :when (funcall satisfies k v)
+                   :when (funcall when k v)
                      :do (decf count)
                      :and :collect k))
             
@@ -899,7 +898,7 @@ Examples
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
                          (decf count)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect k))
             (plist+
              (loop :with checked-keys := '()
@@ -908,10 +907,10 @@ Examples
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
                          (decf count)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect k)))
       
-          ;; count, no-satisfies:
+          ;; count, no-when:
           (etypecase tabula
             (hash-table
              (loop :until (zerop count)
@@ -936,11 +935,11 @@ Examples
                      :and :collect k)))))
 
   ;; no-count:
-  (if satisfies
+  (if when
       (etypecase tabula
         (hash-table
          (loop :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-               :when (funcall satisfies k v)
+               :when (funcall when k v)
                  :collect k))
         
         (alist
@@ -948,7 +947,7 @@ Examples
                :for (k . v) :in tabula
                :unless (member k checked-keys :test key-test)
                  :do (push k checked-keys)
-                 :and :when (funcall satisfies k v)
+                 :and :when (funcall when k v)
                         :collect k))
         
         (plist+
@@ -956,10 +955,10 @@ Examples
                :for (k v . nil) :on tabula :by #'cddr
                :unless (member k checked-keys :test key-test)
                  :do (push k checked-keys)
-                 :and :when (funcall satisfies k v)
+                 :and :when (funcall when k v)
                         :collect k)))
       
-      ;; no-count, no-satisfies:
+      ;; no-count, no-when:
       (etypecase tabula
         (hash-table
          (loop :for k :being :the :hash-keys :of tabula :collect k))
@@ -978,27 +977,29 @@ Examples
                  :do (push k checked-keys)
                  :and :collect k)))))
 
+
 (setf (documentation 'keys 'function) "
-KEYS tabula => key-list
+KEYS tabula &key count when (key-test 'equal) => keys-list
 ")
 
 
 ;;--------------------------------------------------------------------
 ;; vals
 ;;--------------------------------------------------------------------
+;; TODO: add :unless
 
-(defun vals (tabula &key count satisfies (key-test #'equal))
-  (check-type tabula    tabula)
-  (check-type count     (or null (integer 0 *)))
-  (check-type satisfies (or symbol function))
-  (check-type key-test  (or function symbol))
+(defun vals (tabula &key count when (key-test #'equal))
+  (check-type tabula   tabula)
+  (check-type count    (or null (integer 0 *)))
+  (check-type when     (or symbol function))
+  (check-type key-test (or function symbol))
   (if count
-      (if satisfies
+      (if when
           (etypecase tabula
             (hash-table
              (loop :until (zerop count)
                    :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-                   :when (funcall satisfies k v)
+                   :when (funcall when k v)
                      :do (decf count)
                      :and :collect v))
             (alist
@@ -1008,7 +1009,7 @@ KEYS tabula => key-list
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
                          (decf count)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect v))
             (plist+
              (loop :with checked-keys := '()
@@ -1017,10 +1018,10 @@ KEYS tabula => key-list
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
                          (decf count)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect v)))
           
-          ;; count, no-satisfies:
+          ;; count, no-when:
           (etypecase tabula
             (hash-table
              (loop :until (zerop count)
@@ -1043,28 +1044,28 @@ KEYS tabula => key-list
                      :and :collect v))))
 
       ;; no-count:
-      (if satisfies
+      (if when
           (etypecase tabula
             (hash-table
              (loop :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-                   :when (funcall satisfies k v)
+                   :when (funcall when k v)
                      :collect v))
             (alist
              (loop :with checked-keys := '()
                    :for (k . v) :in tabula
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect v))
             (plist+
              (loop :with checked-keys := '()
                    :for (k v . nil) :on tabula :by #'cddr
                    :unless (member k checked-keys :test key-test)
                      :do (push k checked-keys)
-                     :and :when (funcall satisfies k v)
+                     :and :when (funcall when k v)
                             :collect v)))
           
-          ;; no-count, no-satisfies:
+          ;; no-count, no-when:
           (etypecase tabula
             (hash-table
              (loop :for v :being :the :hash-values :of tabula :collect v))
@@ -1081,78 +1082,15 @@ KEYS tabula => key-list
                      :do (push k checked-keys)
                      :and :collect v))))))
 
+
 (setf (documentation 'vals 'function) "
-VALS tabula => value-list
+VALS tabula &key count when (key-test 'equal) => values-list
 ")
 
 
 ;;--------------------------------------------------------------------
 ;; map+
 ;;--------------------------------------------------------------------
-
-#+nil
-(defun map+ (result-type function tabula &key (key-test 'equal))
-  (check-type function (or symbol function))
-  (check-type tabula   tabula)
-  (check-type key-test (or symbol function))
-  (when (or (eq result-type t)
-            (eq result-type 'tabula))
-    (setf result-type (etypecase tabula
-                        (hash-table 'hash-table)
-                        (alist      'alist)
-                        (plist+     'plist))))
-
-  ;; ADD: copy-empty-object*
-  (case result-type
-    ((nil)
-     (dotab2 (k v tabula)
-       (funcall function k v)))
-
-    (hash-table
-     (let ((result (if (hash-table-p tabula)
-                       (copy-empty-hash-table tabula)
-                       (make-hash-table :test 'equal))))
-       (dotab2 (k v tabula)
-         (setf (gethash k result) (funcall function k v)))
-       result))
-
-    ((vector array)
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push (funcall function k v) result))
-       (coerce (nreverse result) 'vector)))
-    
-    ((list sequence sequens)
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push (funcall function k v) result))
-       (nreverse result)))
-
-    ((plist plist+)
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push k result)
-         (push (funcall function k v) result))
-       (nreverse result)))
-    
-    (alist
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push (cons k (funcall function k v)) result))
-       (nreverse result)))
-    
-    ((bit-vector bit-array)
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push (funcall function k v) result))
-       (coerce (nreverse result) 'bit-vector)))
-    
-    (t
-     (let ((result '()))
-       (dotab2 (k v tabula)
-         (push (funcall function k v) result))
-       (coerce (nreverse result) result-type)))))
-
 
 (defun map+ (result-type function tabula)
   (check-type function (or symbol function))
