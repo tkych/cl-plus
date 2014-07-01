@@ -3820,15 +3820,13 @@
   (signals type-error (find* 42 '(0 1 2) :start -1))
   (signals type-error (find* 42 '(0 1 2) :start nil))
   (signals type-error (find* 42 '(0 1 2) :start '(0 1)))
-  (is-true (find* 4 #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (find* 42 '(0 1 2) :end -1))
   (signals type-error (find* 42 '(0 1 2) :end '(0 1)))
-  (is-true (find* 2 #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (find* 42 '(0 1 2) :start 42 :end 24))
-  (is-true (find* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error (find* 42 '(0 1 2) :start 42 :end 24))
+  (finishes (find* 4 #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (find* 2 #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (find* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1)))
+  (signals error (find* 2 #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1))))
 
 
 (test ?find*.list
@@ -3890,32 +3888,36 @@
 (test ?find*.lazy-sequence
   (for-all ((lst (gen-list :elements (gen-integer :min 0 :max 10)
                            :length (gen-integer :min 0 :max 10))))
-    (is (eql (find* 0 (lfor x :in lst))
-             (find  0 lst)))
+    (is-eql (find* 0 (lfor x :in lst))
+            (find  0 lst))
     
-    (is (eql (find* 0 (lfor x :in lst) :key #'1+)
-             (find  0 lst :key #'1+)))
+    (is-eql (find* 0 (lfor x :in lst) :key #'1+)
+            (find  0 lst :key #'1+))
     
     (unless (null lst)
       (let ((start (random (length lst))))
-        (is (eql (find* 0 (lfor x :in lst) :start start)
-                 (find  0 lst :start start))))
+        (is-eql (find* 0 (lfor x :in lst) :start start)
+                (find  0 lst :start start)))
       
       (let ((end (random (length lst))))
-        (is (eql (find* 0 (lfor x :in lst) :end end)
-                 (find  0 lst :end end))))
+        (is-eql (find* 0 (lfor x :in lst) :end end)
+                (find  0 lst :end end)))
 
       (let* ((end   (random (length lst)))
-             (start (random (1+ end))))
-        (is (eql (find* 0 (lfor x :in lst) :start start :end end)
-                 (find  0 lst :start start :end end)))))))
+             (start (random (max 1 end))))
+        (is-eql (find* 0 (lfor x :in lst) :start start :end end)
+                (find  0 lst :start start :end end))))))
 
 
 (test ?find*.array
-  (is (eql (find* 42 #2A((1 42 3) (4 5 6)) :start '(0 1))
-           42))
-  (is (eql (find* 42 #2A((1 42 3) (4 5 6)) :start '(0 2))
-           nil))
+  (is-eql (find* 42 #2A((1 42 3) (4 5 6)) :start '(0 1))
+          42)
+  (is-eql (find* 42 #2A((1 42 3) (4 5 6)) :start '(0 2))
+          nil)
+  (is-eql (find* 42 #2A((1 42 3) (4 5 6)) :end '(0 2))
+          42)
+  (is-eql (find* 42 #2A((1 42 3) (4 5 6)) :start '(0 1) :end '(0 1))
+          nil)
   
   (for-all ((lst (gen-list :elements (gen-integer :min 0 :max 10)
                            :length (gen-integer :min 0 :max 10))))
@@ -3924,32 +3926,31 @@
            (init (loop :repeat dim0 :collect lst))
            (ary  (make-array (list dim0 dim1) :initial-contents init)))
       
-      (is (eql (find* 0 ary)
-               (find 0 lst)))
+      (is-eql (find* 0 ary)
+              (find 0 lst))
 
-      (is (eql (find* 0 ary :key #'1+)
-               (find 0 lst :key #'1+)))
+      (is-eql (find* 0 ary :key #'1+)
+              (find 0 lst :key #'1+))
       
-      (let ((rand (random (1+ (* dim0 dim1)))))
-        (unless (zerop rand)
-          (is (eql (find* 0 ary :start rand)
-                   (loop :for i :from rand :below (* dim0 dim1)
-                         :when (eql 0 (row-major-aref ary i))
-                           :return 0)))
-          
-          (is (eql (find* 0 ary :end rand)
-                   (loop :for i :from 0 :below rand
-                         :when (eql 0 (row-major-aref ary i))
-                           :return 0)))
+      (let ((rand (random (max 1 (* dim0 dim1)))))
+        (is-eql (find* 0 ary :start rand)
+                (loop :for i :from rand :below (* dim0 dim1)
+                      :when (eql 0 (row-major-aref ary i))
+                        :return 0))
+        
+        (is-eql (find* 0 ary :end rand)
+                (loop :for i :from 0 :below rand
+                      :when (eql 0 (row-major-aref ary i))
+                        :return 0))
 
-          (let ((start (1+ (random rand))))
-            (is (eql (find* 0 ary :start start :end rand)
-                     (loop :for i :from start :below rand
-                           :when (eql 0 (row-major-aref ary i))
-                             :return 0))))))
+        (let ((start (random (max 1 rand))))
+          (is-eql (find* 0 ary :start start :end rand)
+                  (loop :for i :from start :below rand
+                        :when (eql 0 (row-major-aref ary i))
+                          :return 0))))
 
-      (is (eql (find* 0 ary :from-end t)
-               (find* 0 ary))))))
+      (is-eql (find* 0 ary :from-end t)
+              (find* 0 ary)))))
 
 
 (test ?find*.hash-table
