@@ -129,6 +129,7 @@ Lazy-Sequence
 
 ;; CL+CL
 (map* 'list ^bp(expt b p) #[1 2 4..] #[1..10])
+(map* 10 ^bp(expt b p) #[1 2 4..] #[1..])
 ```
 
 

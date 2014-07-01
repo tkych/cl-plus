@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 23:25:34 tkych
-
-;; cl-plus/src/core/buxis.lisp
+;;;; cl-plus/src/core/buxis.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -104,6 +102,7 @@ Macros
   (:import-from #:cl-plus.src.cdr.cdr-5
                 #:array-index)
   (:import-from #:cl-plus.src.core.lazy-sequence
+                #:lazy-sequence-p
                 #:lazy-sequence
                 #:make-lazy-seq
                 #:copy-lazy-seq
@@ -209,7 +208,7 @@ optimization purpose only.
         (incf index)))))
 
 (defun warn-order-of-hash-table-entries ()
-  (warn "The result might depend on hash-table implementation of your CL systems."))
+  (warn "The result might depend on hash-table implementation of your CL system."))
 
 (defun %make-hash-table-iterator (hash-table)
   (declare (type hash-table hash-table))
@@ -405,15 +404,19 @@ DOBUX2 (tag-var value-var buxis-form &optional result-form) &body body => result
                                       :else :return nil)
                   :while vals
                   :always (apply predicate vals))))
+
       (etypecase first-buxis
         (sequence
          (every predicate first-buxis))
+
         (hash-table
          (loop :for v :being :the :hash-values :in first-buxis
                :always (funcall predicate v)))
+        
         (array
          (loop :for i :of-type array-index :from 0 :below (array-total-size first-buxis)
                :always (funcall predicate (row-major-aref first-buxis i))))
+        
         (lazy-sequence
          (with-lazy-seq-iterator (next-entry first-buxis)
            (loop
@@ -458,15 +461,19 @@ Notes
                                       :else :return nil)
                   :while vals
                   :always (not (apply predicate vals)))))
+
       (etypecase first-buxis
         (sequence
          (notevery predicate first-buxis))
+
         (hash-table
          (loop :for v :being :the :hash-values :in first-buxis
                :always (not (funcall predicate v))))
+
         (array
          (loop :for i :of-type array-index :from 0 :below (array-total-size first-buxis)
                :always (not (funcall predicate (row-major-aref first-buxis i)))))
+
         (lazy-sequence
          (with-lazy-seq-iterator (next-entry first-buxis)
            (loop
@@ -670,8 +677,8 @@ Notes
     (lazy-sequence
      (let ((result-lseq (lazy-map function buxis)))
        (declare (type lazy-sequence result-lseq))
-       (if (or (integerp result-type)
-               (eq :all result-type))
+       (if (and (integerp result-type)
+                (plusp result-type))
            (lazy-take result-type result-lseq) ;; (((EXPERIMENTAL)))
            (case result-type
              ((t lazy-sequence buxis)
@@ -817,19 +824,36 @@ Notes
               (destructuring-bind
                   (more? . vals) (multiple-value-list (get-next-values))
                 (declare (type boolean more?))
-                (unless more? (return))
+                (unless more? (return-from map*))
                 (apply function vals)))
             
             (let ((result '()))
               (declare (type list result))
-              (loop
-                (destructuring-bind
-                    (more? . vals) (multiple-value-list (get-next-values))
-                  (declare (type boolean more?))
-                  (unless more? (return))
-                  (push (apply function vals) result)))
+              (if (and (integerp result-type)
+                       (plusp result-type))
+                  ;; (((EXPERIMENTAL)))
+                  (if (notany #'lazy-sequence-p more-buxides)
+                      (error "positive-integer ~S is supplied as result-type, but no lazy-sequence is supplied as arguments."
+                             result-type)
+                      (let ((count result-type))
+                        (loop
+                          (destructuring-bind
+                              (more? . vals) (multiple-value-list (get-next-values))
+                            (declare (type boolean more?))
+                            (unless (and more? (< 0 count))
+                              (return-from map* (nreverse result)))
+                            (push (apply function vals) result)
+                            (decf count)))))
+                  (loop
+                    (destructuring-bind
+                        (more? . vals) (multiple-value-list (get-next-values))
+                      (declare (type boolean more?))
+                      (unless more? (return))
+                      (push (apply function vals) result))))
+
               (setf result (nreverse result))
 
+              ;; Coerce result to result-type.
               (when (or (eq t result-type)
                         (eq 'buxis result-type))
                 (setf result-type (%get-type first-buxis)))
@@ -847,7 +871,7 @@ Notes
                  (make-lazy-seq result)) ; TODO: not compute
                 
                 ((hash-table)
-                 (let ((ht (make-hash-table :test 'equal)) ; !!!
+                 (let ((ht (make-hash-table :test #'equal))
                        (i  0))
                    (dolist (v result)
                      (setf (gethash i ht) v)
@@ -1047,62 +1071,6 @@ References
 ;; scan*
 ;;--------------------------------------------------------------------
 ;; TODO
-
-#-common-lisp
-(defun scan* (function buxis &key key (initial-value nil ivp) from-end (start 0) end)
-  (check-type function (or symbol function))
-  (check-type key      (or null symbol function))
-
-  (etypecase buxis
-    (sequence
-     (if ivp
-         (scan function buxis :key key :initial-value initial-value
-                              :from-end from-end :start start :end end)
-         (scan function buxis :key key :from-end from-end :start start :end end)))
-
-    (lazy-sequence
-     )
-
-    (hash-table
-     )
-
-    (array
-     (check-type start (or list array-index))
-     (check-type end   (or list array-index))
-     (when (listp start)
-       (setf start (the array-index (apply #'array-row-major-index buxis start))))
-     (when (and end (listp end))
-       (setf end (the array-index (apply #'array-row-major-index buxis end))))
-     (when (and end (< end start))
-       (error "[~S , ~S) is bad interval." start end))
-     (setf end (the array-index (or end (array-total-size buxis))))
-     (setf key (the (or function symbol) (or key #'identity)))
-     (let ((len (array-total-size buxis)))
-       (cond ((zerop len)
-              (if ivp
-                  (list initial-value)
-                  (list (funcall function))))
-             ((and (= 1 len)
-                   (not ivp))
-              (list (row-major-aref buxis 0)))
-             (t
-              (if from-end
-                  (loop :with result := '()
-                        :for i :of-type array-index :downfrom (1- end) :to start
-                        :for prev := (row-major-aref buxis (1- end)) :then (funcall function prev curr)
-                        :for curr := (row-major-aref buxis (- end 2)) :then (row-major-aref buxis i)
-                        :do (push prev result)
-                        :finally (return (nreverse (push (funcall function prev curr)
-                                                         result))))
-                  (loop :with result := '()
-                        :for i :of-type array-index :from start :below end
-                        :for prev := (row-major-aref buxis 0) :then (funcall function prev curr)
-                        :for curr := (row-major-aref buxis 1) :then (row-major-aref buxis i)
-                        :do (push prev result)
-                        :finally (return (nreverse (push (funcall function prev curr)
-                                                         result)))
-                        ))))))))
-
 
 
 ;;--------------------------------------------------------------------
@@ -2465,30 +2433,6 @@ Note
                     :from start :below (array-total-size buxis)
                     :do (setf (row-major-aref result i)
                               item))))
-       result))
-    #+nil
-    (array
-     ;; MEMO:
-     ;; Should error if end > array-total-size?
-     (check-type start (or list array-index))
-     (check-type end   (or list array-index))
-     (when (listp start)
-       (setf start (the array-index (apply #'array-row-major-index buxis start))))
-     (when (and end (listp end))
-       (setf end (the array-index (apply #'array-row-major-index buxis end))))
-     (when (and end (< end start))
-       (error "[~S , ~S) is bad interval." start end))
-     (let ((result (if destructive buxis (copy-empty-array buxis))))
-       (declare (type array result))
-       ;; (setf end (the array-index (or end (array-total-size buxis))))
-       ;; (do ((i start (1+ i)))
-       ;;     ((<= end i))
-       ;;   (declare (type array-index i))
-       ;;   (setf (row-major-aref result i) item))
-       (loop :for i :of-type array-index
-             :from start :below (or end (array-total-size buxis))
-             :do (setf (row-major-aref result i)
-                       item))
        result))))
 
 

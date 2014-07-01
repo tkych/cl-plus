@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 23:29:23 tkych
-
-;; cl-plus/test/core/buxis.lisp
+;;;; cl-plus/test/core/buxis.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
@@ -3120,118 +3118,20 @@
                        (map  'string (lambda (x) (code-char (flip x))) bvec0))))))))
 
 
+;; TODO:
 (test ?map*.string
   )
 
-
-#+nil
 (test ?map*.lazy-sequence
-  (for-all ((lst0 (gen-list))
-            (lst1 (gen-list)))
-    (let ((lseq0 (lfor :in lst0)))
-      
-      (is-equalp (map*  t      #'1+ lseq0)
-                 (map  'vector #'1+ lseq0))
-      (is-equal  (map*  nil    #'1+ lseq0)
-                 (map   nil    #'1+ lseq0))
-      (is-equal  (map* 'list   #'1+ lseq0)
-                 (map  'list   #'1+ lseq0))
-      (is-equalp (map* 'vector #'1+ lseq0)
-                 (map  'vector #'1+ lseq0))
-      (is-equal  (map* 'bit-vector (lambda (x) (if (plusp x) 1 0)) lseq0)
-                 (map  'bit-vector (lambda (x) (if (plusp x) 1 0)) lseq0))
-      (is-equal  (map* 'string (lambda (x) (code-char (abs x))) lseq0)
-                 (map  'string (lambda (x) (code-char (abs x))) lseq0))
-      
-      ;; list
-      (is-equalp (map*  t      #'+ lseq0 lst1)
-                 (map  'vector #'+ lseq0 lst1))
-      (is-equal  (map*  nil    #'+ lseq0 lst1)
-                 (map   nil    #'+ lseq0 lst1))
-      (is-equal  (map* 'list   #'+ lseq0 lst1)
-                 (map  'list   #'+ lseq0 lst1))
-      (is-equalp (map* 'vector #'+ lseq0 lst1)
-                 (map  'vector #'+ lseq0 lst1))
-      (is-equal  (map* 'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 lst1)
-                 (map  'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 lst1))
-      (is-equal  (map* 'string (lambda (x y) (code-char (abs (* x y)))) lseq0 lst1)
-                 (map  'string (lambda (x y) (code-char (abs (* x y)))) lseq0 lst1))
-
-      ;; vector
-      (let ((vec (coerce lst1 'vector)))
-        (is-equalp (map*  t      #'+ lseq0 vec)
-                   (map  'vector #'+ lseq0 vec))
-        (is-equal  (map*  nil    #'+ lseq0 vec)
-                   (map   nil    #'+ lseq0 vec))
-        (is-equal  (map* 'list   #'+ lseq0 vec)
-                   (map  'list   #'+ lseq0 vec))
-        (is-equalp (map* 'vector #'+ lseq0 vec)
-                   (map  'vector #'+ lseq0 vec))
-        (is-equal  (map* 'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 vec)
-                   (map  'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 vec))
-        (is-equal  (map* 'string (lambda (x y) (code-char (abs (* x y)))) lseq0 vec)
-                   (map  'string (lambda (x y) (code-char (abs (* x y)))) lseq0 vec)))
-
-      ;; lazy-sequence
-      (let ((lseq (lfor x :in lst1)))
-        (is-equalp (map*  t      #'+ lseq0 lseq)
-                   (map  'vector #'+ lseq0 lst1))
-        (is-equal  (map*  nil    #'+ lseq0 lseq)
-                   (map   nil    #'+ lseq0 lst1))
-        (is-equal  (map* 'list   #'+ lseq0 lseq)
-                   (map  'list   #'+ lseq0 lst1))
-        (is-equalp (map* 'vector #'+ lseq0 lseq)
-                   (map  'vector #'+ lseq0 lst1))
-        (is-equal  (map* 'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 lseq)
-                   (map  'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 lst1))
-        (is-equal  (map* 'string (lambda (x y) (code-char (abs (* x y)))) lseq0 lseq)
-                   (map  'string (lambda (x y) (code-char (abs (* x y)))) lseq0 lst1)))
-
-      ;; array
-      (let ((ary (make-array (list 3 (length lst1))
-                             :initial-contents (list lst1 lst1 lst1)))
-            (lst2 (append lst1 lst1 lst1)))
-        (is-equalp (map*  t      #'+ lseq0 ary)
-                   (map  'vector #'+ lseq0 lst2))
-        (is-equal  (map*  nil    #'+ lseq0 ary)
-                   (map   nil    #'+ lseq0 lst2))
-        (is-equal  (map* 'list   #'+ lseq0 ary)
-                   (map  'list   #'+ lseq0 lst2))
-        (is-equalp (map* 'vector #'+ lseq0 ary)
-                   (map  'vector #'+ lseq0 lst2))
-        (is-equal  (map* 'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 ary)
-                   (map  'bit-vector (lambda (x y) (if (plusp (* x y)) 1 0)) lseq0 lst2))
-        (is-equal  (map* 'string (lambda (x y) (code-char (abs (* x y)))) lseq0 ary)
-                   (map  'string (lambda (x y) (code-char (abs (* x y)))) lseq0 lst2)))
-
-      ;; hash-table
-      (with-muffle-warnings
-        (let ((ht (loop :with h := (make-hash-table)
-                        :for k :from 0 :to (length lseq0) ;; size = length + 1
-                        :do (setf (gethash k h) 1)
-                        :finally (return h))))
-          (is-equalp (map*  t      #'+  lseq0 ht)
-                     (map  'vector #'1+ lseq0))
-          (is-equal  (map*  nil    #'+ lseq0 ht)
-                     (map   nil    #'1+ lseq0))
-          (is-equal  (map* 'list   #'+ lseq0 ht)
-                     (map  'list   #'1+ lseq0))
-          (is-equalp (map* 'vector #'+ lseq0 ht)
-                     (map  'vector #'1+ lseq0))
-          (is-equal  (map* 'bit-vector (lambda (x y) (if (plusp (+ x y)) 1 0)) lseq0 ht)
-                     (map  'bit-vector (lambda (x) (if (plusp (1+ x)) 1 0)) lseq0))
-          (is-equal  (map* 'string (lambda (x y) (code-char (abs (+ x y)))) lseq0 ht)
-                     (map  'string (lambda (x) (code-char (abs (1+ x)))) lseq0)))))))
-
+  (is-equal (with-time-limit (1 :boom!)
+              (map* 5 ^bp(expt b p) #[1 2 4..] #[1..]))
+            '(1 4 64 4096 1048576)))
 
 (test ?map*.array
   )
 
 (test ?map*.hash-table
   )
-
-
-
 
 
 ;;--------------------------------------------------------------------
