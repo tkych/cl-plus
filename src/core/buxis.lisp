@@ -1485,17 +1485,19 @@ note
 ;;--------------------------------------------------------------------
 ;; find-if-not*
 ;;--------------------------------------------------------------------
+;; TODO: add check-type or impl.
 
 (defun find-if-not* (predicate buxis &key key (start 0) end from-end)
   (find-if* (complement (ensure-function predicate)) buxis
             :key key :start start :end end :from-end from-end))
 
+
 (setf (documentation 'find-if-not* 'function) "
 find-if-not* predicate buxis &key key (start 0) end from-end => result
 
-note
+Note
 ----
- - if `buxis' is an array, it accepts subscript-list as `start/end' value.
+ - If `buxis' is an array, it accepts subscript-list as `start/end' value.
 ")
 
 
@@ -1521,64 +1523,109 @@ note
      (check-type end   (or null array-index))
      (when (and end (< end start))
        (error "[~s , ~s) is bad interval." start end))
-     (setf key (the (or function symbol) (or key #'identity)))
      (unless (zerop start)
-       (setf buxis (the lazy-sequence (lazy-drop start buxis)))
+       (setf buxis (lazy-drop start buxis))
        (when end
-         (setf end (the array-index (- end start)))))
-     (with-lazy-seq-iterator (next-entry buxis)
-       (loop
-         (multiple-value-bind (more? index value) (next-entry)
-           (declare (type boolean more?)
-                    (type array-index index))
-           (when (or (not more?)
-                     (and end (<= end index)))
-             (return-from position* nil))
-           (when (funcall test item (funcall key value))
-             (return-from position*
-               (if (zerop start)
-                   index
-                   (+ index start))))))))
+         (decf end start)))
+     
+     (if key
+         (if end
+             (with-lazy-seq-iterator (get-next-entry buxis)
+               (loop
+                 (multiple-value-bind (more? index value) (get-next-entry)
+                   (declare (type boolean more?)
+                            (type array-index index))
+                   (when (or (not more?)
+                             (<= end index))
+                     (return-from position* nil))
+                   (when (funcall test item (funcall key value))
+                     (return-from position*
+                       (if (zerop start)
+                           index
+                           (+ index start)))))))
+             (with-lazy-seq-iterator (get-next-entry buxis)
+               (loop
+                 (multiple-value-bind (more? index value) (get-next-entry)
+                   (declare (type boolean more?)
+                            (type array-index index))
+                   (unless more?
+                     (return-from position* nil))
+                   (when (funcall test item (funcall key value))
+                     (return-from position*
+                       (if (zerop start)
+                           index
+                           (+ index start))))))))
+         ;; no-key:
+         (if end
+             (with-lazy-seq-iterator (get-next-entry buxis)
+               (loop
+                 (multiple-value-bind (more? index value) (get-next-entry)
+                   (declare (type boolean more?)
+                            (type array-index index))
+                   (when (or (not more?)
+                             (<= end index))
+                     (return-from position* nil))
+                   (when (funcall test item value)
+                     (return-from position*
+                       (if (zerop start)
+                           index
+                           (+ index start)))))))
+             (with-lazy-seq-iterator (get-next-entry buxis)
+               (loop
+                 (multiple-value-bind (more? index value) (get-next-entry)
+                   (declare (type boolean more?)
+                            (type array-index index))
+                   (unless more?
+                     (return-from position* nil))
+                   (when (funcall test item value)
+                     (return-from position*
+                       (if (zerop start)
+                           index
+                           (+ index start))))))))))
 
     (hash-table
-     (setf key (the (or function symbol) (or key #'identity)))
-     (loop :for v :being :the :hash-values :of buxis :using (:hash-key k)
-           :when (funcall test item (funcall key v))
-             :return k))
-
+     (if key
+         (loop :for v :being :the :hash-values :of buxis :using (:hash-key k)
+               :when (funcall test item (funcall key v))
+                 :return k)
+         (loop :for v :being :the :hash-values :of buxis :using (:hash-key k)
+               :when (funcall test item v)
+                 :return k)))
+    
     (array
      (check-type start (or list array-index))
      (check-type end   (or list array-index))
      (when (listp start)
-       (setf start (the array-index (apply #'array-row-major-index buxis start))))
-     (when (and end (listp end))
-       (setf end (the array-index (apply #'array-row-major-index buxis end))))
-     (when (and end (< end start))
+       (setf start (apply #'array-row-major-index buxis start)))
+     (if (not end)
+         (setf end (array-total-size buxis))
+         (when (and end (listp end))
+           (setf end (apply #'array-row-major-index buxis end))))
+     (when (< end start)
        (error "[~s , ~s) is bad interval." start end))
-     (setf end (the array-index (or end (array-total-size buxis))))
-     (setf key (the (or function symbol) (or key #'identity)))
-     (if from-end
-         (do ((i (1- end) (1- i)))
-             ((< i start) nil)
-           (declare (type array-index-1 i))
-           (when (funcall test item (funcall key (row-major-aref buxis i)))
-             (return (if subscript (array-subscripts buxis i) i))))
-         ;; (loop :for i :of-type array-index-1
-         ;;       :downfrom (1- end) :to start
-         ;;       :for v := (row-major-aref buxis i)
-         ;;       :when (funcall test item (funcall key v))
-         ;;         :return (if subscript (array-subscripts buxis i) i))         
-         (do ((i start (1+ i)))
-             ((<= end i) nil)
-           (declare (type array-index i))
-           (when (funcall test item (funcall key (row-major-aref buxis i)))
-             (return (if subscript (array-subscripts buxis i) i))))
-         ;; (loop :for i :of-type array-index
-         ;;       :from start :below end
-         ;;       :for v := (row-major-aref buxis i)
-         ;;       :when (funcall test item (funcall key v))
-         ;;         :return (if subscript (array-subscripts buxis i) i))
-         ))))
+     (if key
+         (if from-end
+             (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                   :for v := (row-major-aref buxis i)
+                   :when (funcall test item (funcall key v))
+                     :return (if subscript (array-subscripts buxis i) i))         
+
+             (loop :for i :of-type array-index :from start :below end
+                   :for v := (row-major-aref buxis i)
+                   :when (funcall test item (funcall key v))
+                     :return (if subscript (array-subscripts buxis i) i)))
+         ;; no-key:
+         (if from-end
+             (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                   :for v := (row-major-aref buxis i)
+                   :when (funcall test item v)
+                     :return (if subscript (array-subscripts buxis i) i))         
+
+             (loop :for i :of-type array-index :from start :below end
+                   :for v := (row-major-aref buxis i)
+                   :when (funcall test item v)
+                     :return (if subscript (array-subscripts buxis i) i)))))))
+
 
 (setf (documentation 'position* 'function) "
 position* item buxis &key key (test 'eql) (start 0) end from-end subscripts => result

@@ -3649,15 +3649,14 @@
   (signals type-error (count-if-not* #'oddp '(0 1 2) :start -1))
   (signals type-error (count-if-not* #'oddp '(0 1 2) :start nil))
   (signals type-error (count-if-not* #'oddp '(0 1 2) :start '(0 1)))
-  (is-true (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (count-if-not* #'oddp '(0 1 2) :end -1))
   (signals type-error (count-if-not* #'oddp '(0 1 2) :end '(0 1)))
-  (is-true (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (count-if-not* #'oddp '(0 1 2) :start 42 :end 24))
-  (is-true (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error      (count-if-not* #'oddp '(0 1 2) :start 42 :end 24))
+  (signals error      (count-if-not* #'oddp #2A((0 1 2) (3 4 5))
+                                     :start '(1 1) :end '(0 1)))
+  (finishes (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (count-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))))
 
 
 (test ?count-if-not*.list
@@ -4180,15 +4179,13 @@
   (signals type-error (find-if-not* #'oddp '(0 1 2) :start -1))
   (signals type-error (find-if-not* #'oddp '(0 1 2) :start nil))
   (signals type-error (find-if-not* #'oddp '(0 1 2) :start '(0 1)))
-  (is-true (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (find-if-not* #'oddp '(0 1 2) :end -1))
   (signals type-error (find-if-not* #'oddp '(0 1 2) :end '(0 1)))
-  (is-true (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (find-if-not* #'oddp '(0 1 2) :start 42 :end 24))
-  (is-true (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error (find-if-not* #'oddp '(0 1 2) :start 42 :end 24))
+  (finishes (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1)))
+  (signals error (find-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1))))
 
 
 (test ?find-if-not*.list
@@ -4358,15 +4355,13 @@
   (signals type-error (position* 42 '(0 1 2) :start -1))
   (signals type-error (position* 42 '(0 1 2) :start nil))
   (signals type-error (position* 42 '(0 1 2) :start '(0 1)))
-  (is-true (position* 4 #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (position* 42 '(0 1 2) :end -1))
-  (signals type-error (position* 42 '(0 1 2) :end '(0 1)))
-  (is-true (position* 2 #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
-
-  (signals simple-error (position* 42 '(0 1 2) :start 42 :end 24))
-  (is-true (position* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
+  (signals error      (position* 42 '(0 1 2) :start 42 :end 24))
+  (signals error      (position* 42 '(0 1 2) :end '(0 1)))
+  (signals error      (position* 2 #2A((0 1 2) (3 4 5)) :start '(1 1) :end '(0 1)))
+  (finishes (position* 4 #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (position* 2 #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (position* 2 #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))))
 
 
 (test ?position*.list
@@ -4428,36 +4423,33 @@
 (test ?position*.lazy-sequence
   (for-all ((lst (gen-list :elements (gen-integer :min 0 :max 10)
                            :length (gen-integer :min 0 :max 10))))
-    (is (eql (position* 0 (lfor x :in lst))
-             (position  0 lst)))
+    (is-eql (position* 0 (lfor x :in lst))
+            (position  0 lst))
     
-    (is (eql (position* 0 (lfor x :in lst) :key #'1+)
-             (position  0 lst :key #'1+)))
+    (is-eql (position* 0 (lfor x :in lst) :key #'1+)
+            (position  0 lst :key #'1+))
     
-    (unless (null lst)
-      (let ((start (random (length lst))))
-        (is (eql (position* 0 (lfor x :in lst) :start start)
-                 (position  0 lst :start start))))
+    (let ((rand (random (max 1 (length lst)))))
+      (is-eql (position* 0 (lfor x :in lst) :start rand)
+              (position  0 lst :start rand))
       
-      (let ((end (random (length lst))))
-        (is (eql (position* 0 (lfor x :in lst) :end end)
-                 (position  0 lst :end end))))
+      (is-eql (position* 0 (lfor x :in lst) :end rand)
+              (position  0 lst :end rand))
 
-      (let* ((end   (random (length lst)))
-             (start (random (1+ end))))
-        (is (eql (position* 0 (lfor x :in lst) :start start :end end)
-                 (position  0 lst :start start :end end)))))))
+      (let* ((start (random (max 1 rand))))
+        (is-eql (position* 0 (lfor x :in lst) :start start :end rand)
+                (position  0 lst :start start :end rand))))))
 
 
 (test ?position*.array
-  (is (eql (position* 42 #2A((1 42 3) (4 5 6)) :start '(0 1))
-           1))
-  (is (eql (position* 42 #2A((1 42 3) (4 5 6)) :start '(0 2))
-           nil))
-  (is (equal (position* 42 #2A((1 2 3) (42 5 6)) :subscript t)
-             '(1 0)))
-  (is (equal (position* 42 #2A((1 2 3) (4 5 6)) :subscript t)
-             nil))
+  (is-eql (position* 42 #2A((1 42 3) (4 5 6)) :start '(0 1))
+          1)
+  (is-eql (position* 42 #2A((1 42 3) (4 5 6)) :start '(0 2))
+          nil)
+  (is-equal (position* 42 #2A((1 2 3) (42 5 6)) :subscript t)
+            '(1 0))
+  (is-equal (position* 42 #2A((1 2 3) (4 5 6)) :subscript t)
+            nil)
   
   (for-all ((lst (gen-list :elements (gen-integer :min 0 :max 10)
                            :length (gen-integer :min 0 :max 10))))
@@ -4466,34 +4458,34 @@
            (init (loop :repeat dim0 :collect lst))
            (ary  (make-array (list dim0 dim1) :initial-contents init)))
       
-      (is (eql (position* 0 ary)
-               (position 0 lst)))
+      (is-eql (position* 0 ary)
+              (position 0 lst))
 
-      (is (eql (position* 0 ary :key #'1+)
-               (position 0 lst :key #'1+)))
+      (is-eql (position* 0 ary :key #'1+)
+              (position 0 lst :key #'1+))
       
       (let ((rand (random (1+ (* dim0 dim1)))))
         (unless (zerop rand)
-          (is (eql (position* 0 ary :start rand)
-                   (loop :for i :from rand :below (* dim0 dim1)
-                         :when (eql 0 (row-major-aref ary i))
-                           :return i)))
+          (is-eql (position* 0 ary :start rand)
+                  (loop :for i :from rand :below (* dim0 dim1)
+                        :when (eql 0 (row-major-aref ary i))
+                          :return i))
           
-          (is (eql (position* 0 ary :end rand)
-                   (loop :for i :from 0 :below rand
-                         :when (eql 0 (row-major-aref ary i))
-                           :return i)))
+          (is-eql (position* 0 ary :end rand)
+                  (loop :for i :from 0 :below rand
+                        :when (eql 0 (row-major-aref ary i))
+                          :return i))
 
           (let ((start (1+ (random rand))))
-            (is (eql (position* 0 ary :start start :end rand)
-                     (loop :for i :from start :below rand
-                           :when (eql 0 (row-major-aref ary i))
-                             :return i))))))
+            (is-eql (position* 0 ary :start start :end rand)
+                    (loop :for i :from start :below rand
+                          :when (eql 0 (row-major-aref ary i))
+                            :return i)))))
 
-      (is (eql (position* 0 ary :from-end t)
-               (loop :for i :downfrom (1- (array-total-size ary)) :to 0
-                     :when (eql 0 (row-major-aref ary i))
-                       :return i))))))
+      (is-eql (position* 0 ary :from-end t)
+              (loop :for i :downfrom (1- (array-total-size ary)) :to 0
+                    :when (eql 0 (row-major-aref ary i))
+                      :return i)))))
 
 
 (test ?position*.hash-table
@@ -4506,33 +4498,33 @@
                     :do (setf (gethash k ht) v)
                     :finally (return ht))))
 
-      (is (eql (position* 0 ht)
-               (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
-                     :when (eql 0 v)
-                       :return k)))
+      (is-eql (position* 0 ht)
+              (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
+                    :when (eql 0 v)
+                      :return k))
       
-      (is (eql (position* 0 ht :key #'1+)
-               (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
-                     :when (eql 0 (1+ v))
-                       :return k)))
+      (is-eql (position* 0 ht :key #'1+)
+              (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
+                    :when (eql 0 (1+ v))
+                      :return k))
 
       ;; keyword start should be ignored.
-      (is (eql (position* 0 ht :start 10)
-               (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
-                     :when (eql 0 v)
-                       :return k)))
+      (is-eql (position* 0 ht :start 10)
+              (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
+                    :when (eql 0 v)
+                      :return k))
       
       ;; keyword end should be ignored.      
-      (is (eql (position* 0 ht :end 10)
-               (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
-                     :when (eql 0 v)
-                       :return k)))
+      (is-eql (position* 0 ht :end 10)
+              (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
+                    :when (eql 0 v)
+                      :return k))
       
       ;; keyword from-end should be ignored.
-      (is (eql (position* 0 ht :from-end t)
-               (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
-                     :when (eql 0 v)
-                       :return k))))))
+      (is-eql (position* 0 ht :from-end t)
+              (loop :for v :being :the :hash-values :of ht :using (:hash-key k)
+                    :when (eql 0 v)
+                      :return k)))))
 
 
 ;;--------------------------------------------------------------------
