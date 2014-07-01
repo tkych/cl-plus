@@ -4710,7 +4710,6 @@
 ;; position-if-not*
 ;;--------------------------------------------------------------------
 
-
 (test ?position-if-not*.error
   (signals type-error (position-if-not* #() '(0 1 2)))
   (signals type-error (position-if-not* #'oddp :foo))
@@ -4718,15 +4717,16 @@
   (signals type-error (position-if-not* #'oddp '(0 1 2) :start -1))
   (signals type-error (position-if-not* #'oddp '(0 1 2) :start nil))
   (signals type-error (position-if-not* #'oddp '(0 1 2) :start '(0 1)))
-  (is-true (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1))) ; check no-error
-
   (signals type-error (position-if-not* #'oddp '(0 1 2) :end -1))
   (signals type-error (position-if-not* #'oddp '(0 1 2) :end '(0 1)))
-  (is-true (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1))) ; check no-error
+  (signals error      (position-if-not* #'oddp '(0 1 2) :start 42 :end 24))
+  (signals error      (position-if-not* #'oddp #2A((0 1 2) (3 4 5))
+                                        :start '(1 1) :end '(0 1)))
+  
+  (finishes (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1)))
+  (finishes (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :end '(1 1)))
+  (finishes (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))))
 
-  (signals simple-error (position-if-not* #'oddp '(0 1 2) :start 42 :end 24))
-  (is-true (position-if-not* #'oddp #2A((0 1 2) (3 4 5)) :start '(0 1) :end '(1 1))) ; check no-error
-  )
 
 (test ?position-if-not*.list
   (for-all ((lst (gen-list :length (gen-integer :min 0 :max 5))))
@@ -4903,7 +4903,7 @@
   (signals type-error (remove* 0 '(0 1 2 3) :end -1))
   (signals type-error (remove* 0 '(0 1 2 3) :count -1))
   (signals type-error (remove* 0 '(0 1 2 3) :count '(-1)))
-  (signals simple-error (remove* 0 '(0 1 2 3) :start 42 :end 24)))
+  (signals error      (remove* 0 '(0 1 2 3) :start 42 :end 24)))
 
 
 (test ?remove*.list
@@ -5012,15 +5012,15 @@
             
       (let ((result* (remove* 0 ht))
             (result  (remove  0 alst :key #'cdr)))
-        (is (= (hash-table-count result*)
-               (length result)))
+        (is-= (hash-table-count result*)
+              (length result))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*)))))
 
       (let ((result* (remove* 0 ht :key #'1+))
             (result  (remove  0 alst :key (lambda (e) (1+ (cdr e))))))
-        (is (= (hash-table-count result*)
-               (length result)))
+        (is-= (hash-table-count result*)
+              (length result))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*))))))))
 

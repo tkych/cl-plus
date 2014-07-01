@@ -1776,6 +1776,7 @@ notes
 ;;--------------------------------------------------------------------
 ;; position-if-not*
 ;;--------------------------------------------------------------------
+;; TODO: add check-type or impl.
 
 (defun position-if-not* (predicate buxis &key key (start 0) end from-end subscript)
   (position-if* (complement (ensure-function predicate)) buxis
@@ -1816,12 +1817,15 @@ Notes
                              :start start :end end))
     
     (hash-table
-     (setf key (the (or function symbol) (or key #'identity)))
      (let ((result (copy-hash-table buxis)))
        (declare (type hash-table result))
-       (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
-             :when (funcall test item (funcall key v))
-               :do (remhash k result))
+       (if key
+           (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                 :when (funcall test item (funcall key v))
+                   :do (remhash k result))
+           (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                 :when (funcall test item v)
+                   :do (remhash k result)))
        result))
     
     (array
