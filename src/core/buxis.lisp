@@ -1882,17 +1882,41 @@ REMOVE* item buxis &key key count (test 'eql) (start 0) end from-end => result
     (lazy-sequence
      (lazy-remove-if predicate buxis :key key :count count
                                      :start start :end end))
-
     (hash-table
-     (setf key (the (or function symbol) (or key #'identity)))
-     (let ((result (copy-hash-table buxis)))
-       (declare (type hash-table result))
-       (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
-             :until (and count (zerop count))
-             :when (funcall predicate (funcall key v))
-               :do (remhash k result)
-                   (when count (decf count)))
-       result))
+     (if key
+         (if count
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :until (zerop count)
+                   :when (funcall predicate (funcall key v))
+                     :do (remhash k result) :and :do (decf count)
+                   :finally (return (progn
+                                      (when (zerop count)
+                                        (warn-order-of-hash-table-entries))
+                                      result)))
+             ;; key, no-count:
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :when (funcall predicate (funcall key v))
+                     :do (remhash k result)
+                   :finally (return result)))
+         ;; no-key:
+         (if count
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :until (zerop count)
+                   :when (funcall predicate v)
+                     :do (remhash k result) :and :do (decf count)
+                   :finally (return (progn
+                                      (when (zerop count)
+                                        (warn-order-of-hash-table-entries))
+                                      result)))
+             ;; no-key, no-count:
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :when (funcall predicate v)
+                     :do (remhash k result)
+                   :finally (return result)))))
 
     (array
      (error "There does not exist REMOVE-IF* for array."))))
