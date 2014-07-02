@@ -1244,9 +1244,9 @@ Note
 ;; find*
 ;;--------------------------------------------------------------------
 
-(defun find* (item buxis &key key (test 'eql) (start 0) end from-end)
+(defun find* (item buxis &key key (test #'eql) (start 0) end from-end)
 
-  (check-type key  (or function symbol))
+  (check-type key  (or symbol function))
   (check-type test (or function symbol))
   
   (etypecase buxis
@@ -1505,9 +1505,10 @@ Note
 ;; position*
 ;;--------------------------------------------------------------------
 
-(defun position* (item buxis &key key (test 'eql) (start 0) end from-end subscript)
+(defun position* (item buxis &key key (test #'eql) (start 0) end from-end subscript)
 
-  (check-type key (or function symbol))
+  (check-type key  (or symbol function))
+  (check-type test (or function symbol))
   
   (etypecase buxis
     (sequence
@@ -1643,8 +1644,8 @@ notes
 
 (defun position-if* (predicate buxis &key key (start 0) end from-end subscript)
 
-  (check-type predicate (or function symbol))
-  (check-type key       (or function symbol))
+  (check-type predicate (or symbol function))
+  (check-type key       (or symbol function))
   
   (etypecase buxis
     (sequence
@@ -1943,241 +1944,313 @@ REMOVE-IF-NOT* predicate buxis &key key count (start 0) end from-end => result
 ;;--------------------------------------------------------------------
 ;; collect-if*
 ;;--------------------------------------------------------------------
-;; TODO: merge
 
-(defun collect-if*-sequence (predicate sequence &key key count (from 0) below from-end)
-  (setf below (or below (length sequence)))
-  (if (not count)
-      (etypecase sequence
-        (list
-         (loop :for e :in (if from-end
-                              (reverse (subseq sequence from below))
-                              (subseq sequence from below))
-               :when (funcall predicate (funcall key e))
-                 :collect e :into result
-               :finally (return (if from-end (reverse result) result))))
-        (vector
-         (if from-end
-             (do ((i (1- below) (1- i))
-                  (acc '() (if (funcall predicate (funcall key (aref sequence i)))
-                               (cons (aref sequence i) acc)
-                               acc)))
-                 ((< i from) acc)
-               (declare (type array-index-1 i)
-                        (type list acc)))
-             ;; (loop :for i :of-type array-index-1 :downfrom (1- below) :to from
-             ;;       :for v := (aref sequence i)
-             ;;       :when (funcall predicate (funcall key v))
-             ;;         :collect v :into acc
-             ;;       :finally (return (nreverse acc)))
-             (do ((i from (1+ i))
-                  (acc '() (if (funcall predicate (funcall key (aref sequence i)))
-                               (cons (aref sequence i) acc)
-                               acc)))
-                 ((<= below i) (nreverse acc))
-               (declare (type array-index i)
-                        (type list acc)))
-             ;; (loop :for i :of-type array-index :from from :below below
-             ;;       :for v := (aref sequence i)
-             ;;       :when (funcall predicate (funcall key v))
-             ;;         :collect v)
-             )))
-      
-      ;; Count exists case:
-      (if (zerop count)
-          '()
-          (etypecase sequence
-            (list
-             (loop :for e :in (if from-end
-                                  (reverse (subseq sequence from below))
-                                  (subseq sequence from below))
-                   :until (zerop count)
-                   :when (funcall predicate (funcall key e))
-                     :do (decf count) :and :collect e :into result
-                   :finally (return (if from-end (reverse result) result))))
-            (vector
-             (if from-end
-                 (do ((i (1- below) (1- i))
-                      (acc '()))
-                     ((< i from) acc)
-                   (declare (type array-index-1 i)
-                            (type list acc))
-                   (when (funcall predicate (funcall key (aref sequence i)))
-                     (push (aref sequence i) acc)
-                     (decf count)
-                     (when (zerop count)
-                       (return acc))))
-                 ;; (loop :for i :of-type array-index-1 :downfrom (1- below) :to from
-                 ;;       :for v := (aref sequence i)
-                 ;;       :until (zerop count)
-                 ;;       :when (funcall predicate (funcall key v))
-                 ;;         :do (decf count) :and :collect v :into acc
-                 ;;       :finally (return (nreverse acc)))
-                 (do ((i from (1+ i))
-                      (acc '()))
-                     ((<= below i) (nreverse acc))
-                   (declare (type array-index i)
-                            (type list acc))
-                   (when (funcall predicate (funcall key (aref sequence i)))
-                     (push (aref sequence i) acc)
-                     (decf count)
-                     (when (zerop count)
-                       (return (nreverse acc)))))
-                 ;; (loop :for i :of-type array-index :from from :below below
-                 ;;       :for v := (aref sequence i)
-                 ;;       :until (zerop count)
-                 ;;       :when (funcall predicate (funcall key v))
-                 ;;         :do (decf count) :and :collect v)
-                 ))))))
+(defun collect-if* (predicate buxis &key key count (start 0) end from-end)
 
-(defun collect-if*-lazy-sequence-without-below
-    (predicate lseq key count from)
-  (let ((result '()))
-    (unless (zerop from)
-      (setf lseq (lazy-drop from lseq)))
-    (if (not count)
-        (with-lazy-seq-iterator (next lseq)
-          (loop
-            (multiple-value-bind (more? index value) (next)
-              (declare (ignore index))
-              (unless more?
-                (return))
-              (when (funcall predicate (funcall key value))
-                (push value result)))))
-        (with-lazy-seq-iterator (next lseq)
-          (loop
-            (multiple-value-bind (more? index value) (next)
-              (declare (ignore index))
-              (when (or (not more?)
-                        (zerop count))
-                (return))
-              (when (funcall predicate (funcall key value))
-                (push value result)
-                (decf count))))))
-    (nreverse result)))
-
-(defun collect-if*-array (predicate array key count from below from-end)
-  (setf below (or below (array-total-size array)))
-  (if (not count)
-      (if from-end
-          (do ((i (1- below) (1- i))
-               (acc '() (if (funcall predicate (funcall key (row-major-aref array i)))
-                            (cons (row-major-aref array i) acc)
-                            acc)))
-              ((< i from) acc)
-            (declare (type array-index-1 i)
-                     (type list acc)))
-          ;; (loop :for i :of-type array-index-1 :downfrom (1- below) :to from
-          ;;       :for v := (row-major-aref array i)
-          ;;       :when (funcall predicate (funcall key v))
-          ;;         :collect v :into acc
-          ;;       :finally (return (nreverse acc)))
-          (do ((i from (1+ i))
-               (acc '() (if (funcall predicate (funcall key (row-major-aref array i)))
-                            (cons (row-major-aref array i) acc)
-                            acc)))
-              ((<= below i) (nreverse acc))
-            (declare (type array-index i)
-                     (type list acc)))
-          ;; (loop :for i :of-type array-index :from from :below below
-          ;;       :for v := (row-major-aref array i)
-          ;;       :when (funcall predicate (funcall key v))
-          ;;         :collect v)
-          )
-      (if (zerop count)
-          '()
-          (if from-end
-              (do ((i (1- below) (1- i))
-                   (acc '()))
-                  ((< i from) acc)
-                (declare (type array-index-1 i)
-                         (type list acc))
-                (when (funcall predicate (funcall key (row-major-aref array i)))
-                  (push (row-major-aref array i) acc)
-                  (decf count)
-                  (when (zerop count)
-                    (return acc))))
-              ;; (loop :for i :of-type array-index-1 :downfrom (1- below) :to from
-              ;;       :for v := (row-major-aref array i)
-              ;;       :until (zerop count)
-              ;;       :when (funcall predicate (funcall key v))
-              ;;         :do (decf count) :and :collect v :into acc
-              ;;       :finally (return (nreverse acc)))
-              (do ((i from (1+ i))
-                   (acc '()))
-                  ((<= below i) (nreverse acc))
-                (declare (type array-index i)
-                         (type list acc))
-                (when (funcall predicate (funcall key (row-major-aref array i)))
-                  (push (row-major-aref array i) acc)
-                  (decf count)
-                  (when (zerop count)
-                    (return (nreverse acc)))))
-              ;; (loop :for i :of-type array-index :from from :below below
-              ;;       :for v := (row-major-aref array i)
-              ;;       :until (zerop count)
-              ;;       :when (funcall predicate (funcall key v))
-              ;;         :do (decf count) :and :collect v)
-              ))))
-
-
-(defun collect-if* (predicate buxis &key key count (from 0) below from-end)
-
-  (check-type predicate (or function symbol))
-  (check-type key       (or function symbol))
+  (check-type predicate (or symbol function))
+  (check-type key       (or symbol function))
   (check-type count     (or null (integer 0 *)))
-  (setf key (the (or function symbol) (or key #'identity)))
-  
+
   (etypecase buxis
-    
     (sequence
-     (check-type from  (integer 0 *))
-     (check-type below (or null (integer 0 *)))
-     (when (and below (< below from))
-       (error "[~S , ~S) is bad interval." from below))
-     (collect-if*-sequence
-      predicate buxis :key key :count count :from from :below below :from-end from-end))
+     (check-type start  (integer 0 *))
+     (check-type end (or null (integer 0 *)))
+     (when (and end (< end start))
+       (error "[~S , ~S) is bad interval." start end))
+     (etypecase buxis
+       (list
+        (if key
+            (if count
+                (if from-end
+                    (loop :for v :in (nreverse (subseq buxis start end))
+                          :until (zerop count)
+                          :when (funcall predicate (funcall key v))
+                            :do (decf count) :and :collect v :into result
+                          :finally (return (reverse result)))
+                    (loop :for v :in (subseq buxis start end)
+                          :until (zerop count)
+                          :when (funcall predicate (funcall key v))
+                            :do (decf count) :and :collect v))
+                ;; key, no-count
+                (if from-end
+                    (loop :for v :in (nreverse (subseq buxis start end))
+                          :when (funcall predicate (funcall key v))
+                            :collect v :into result
+                          :finally (return (reverse result)))
+                    (loop :for v :in (subseq buxis start end)
+                          :when (funcall predicate (funcall key v))
+                             :collect v)))
+            ;; no-key:
+            (if count
+                (if from-end
+                    (loop :for v :in (nreverse (subseq buxis start end))
+                          :until (zerop count)
+                          :when (funcall predicate v)
+                            :do (decf count) :and :collect v :into result
+                          :finally (return (reverse result)))
+                    (loop :for v :in (subseq buxis start end)
+                          :until (zerop count)
+                          :when (funcall predicate v)
+                            :do (decf count) :and :collect v))
+                ;; no-key, no-count
+                (if from-end
+                    (loop :for v :in (nreverse (subseq buxis start end))
+                          :when (funcall predicate v)
+                            :collect v :into result
+                          :finally (return (reverse result)))
+                    (loop :for v :in (subseq buxis start end)
+                          :when (funcall predicate v)
+                            :collect v)))))
+       
+       (vector
+        (setf end (or end (length buxis)))
+        (if key
+            (if count
+                (if (zerop count)
+                    '()
+                    (if from-end
+                        (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                              :for v := (aref buxis i)
+                              :until (zerop count)
+                              :when (funcall predicate (funcall key v))
+                                :do (decf count) :and :collect v :into acc
+                              :finally (return (nreverse acc)))
+                        (loop :for i :of-type array-index :from start :below end
+                              :for v := (aref buxis i)
+                              :until (zerop count)
+                              :when (funcall predicate (funcall key v))
+                                :do (decf count) :and :collect v)))
+                ;; key, no-count:
+                (if from-end
+                    (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                          :for v := (aref buxis i)
+                          :when (funcall predicate (funcall key v))
+                            :collect v :into acc
+                          :finally (return (nreverse acc)))
+                    (loop :for i :of-type array-index :from start :below end
+                          :for v := (aref buxis i)
+                          :when (funcall predicate (funcall key v))
+                            :collect v)))
+            ;; no-key:
+            (if count
+                (if (zerop count)
+                    '()
+                    (if from-end
+                        (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                              :for v := (aref buxis i)
+                              :until (zerop count)
+                              :when (funcall predicate v)
+                                :do (decf count) :and :collect v :into acc
+                              :finally (return (nreverse acc)))
+                        (loop :for i :of-type array-index :from start :below end
+                              :for v := (aref buxis i)
+                              :until (zerop count)
+                              :when (funcall predicate v)
+                                :do (decf count) :and :collect v)))
+                ;; key, no-count:
+                (if from-end
+                    (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                          :for v := (aref buxis i)
+                          :when (funcall predicate v)
+                            :collect v :into acc
+                          :finally (return (nreverse acc)))
+                    (loop :for i :of-type array-index :from start :below end
+                          :for v := (aref buxis i)
+                          :when (funcall predicate v)
+                            :collect v)))))))
 
     (lazy-sequence
-     (check-type from  array-index)
-     (check-type below (or null array-index))
-     (when (and below (< below from))
-       (error "[~S , ~S) is bad interval." from below))
-     (if below
-         (if (zerop from)
-             (collect-if*-sequence predicate (lazy-take (or below :all) buxis)
-                                   :key key :count count :from-end from-end)
-             (collect-if*-sequence predicate (lazy-take (if below (- below from) :all)
-                                                        (lazy-drop from buxis))
-                                   :key key :count count :from-end from-end))
-         (collect-if*-lazy-sequence-without-below
-          predicate buxis key count from)))
-
+     (check-type start  array-index)
+     (check-type end (or null array-index))
+     (if end
+         (if (< end start)
+             (error "[~S , ~S) is bad interval." start end)
+             (let ((realized (if (zerop start)
+                                 (lazy-take end buxis)
+                                 (lazy-take (- end start) (lazy-drop start buxis)))))
+               (if key
+                   (if count
+                       (if from-end
+                           (loop :for v :in (nreverse realized)
+                                 :until (zerop count)
+                                 :when (funcall predicate (funcall key v))
+                                   :do (decf count) :and :collect v :into result
+                                 :finally (return (reverse result)))
+                           (loop :for v :in realized
+                                 :until (zerop count)
+                                 :when (funcall predicate (funcall key v))
+                                   :do (decf count) :and :collect v))
+                       (if from-end
+                           (loop :for v :in (nreverse realized)
+                                 :when (funcall predicate (funcall key v))
+                                   :collect v :into result
+                                 :finally (return (reverse result)))
+                           (loop :for v :in realized
+                                 :when (funcall predicate (funcall key v))
+                                   :collect v)))
+                   ;; no-key:
+                   (if count
+                       (if from-end
+                           (loop :for v :in (nreverse realized)
+                                 :until (zerop count)
+                                 :when (funcall predicate v)
+                                   :do (decf count) :and :collect v :into result
+                                 :finally (return (reverse result)))
+                           (loop :for v :in realized
+                                 :until (zerop count)
+                                 :when (funcall predicate v)
+                                   :do (decf count) :and :collect v))
+                       ;; no-key, no-count:
+                       (if from-end
+                           (loop :for v :in (nreverse realized)
+                                 :when (funcall predicate v)
+                                   :collect v :into result
+                                 :finally (return (reverse result)))
+                           (loop :for v :in realized
+                                 :when (funcall predicate v)
+                                   :collect v))))))
+         ;; no-end:
+         (progn
+           (unless (zerop start)
+             (setf buxis (lazy-drop start buxis)))
+           (if key
+               (if count
+                   (let ((result '() ))
+                     (with-lazy-seq-iterator (get-next-entry buxis)
+                       (loop
+                         (multiple-value-bind (more? _ value) (get-next-entry)
+                           (declare (ignore _))
+                           (when (or (not more?)
+                                     (zerop count))
+                             (return))
+                           (when (funcall predicate (funcall key value))
+                             (push value result)
+                             (decf count)))))
+                     (nreverse result))
+                   (let ((result '()))
+                     (with-lazy-seq-iterator (get-next-entry buxis)
+                       (loop
+                         (multiple-value-bind (more? _ value) (get-next-entry)
+                           (declare (ignore _))
+                           (unless more? (return))
+                           (when (funcall predicate (funcall key value))
+                             (push value result)))))
+                     (nreverse result)))
+               ;; no-key:
+               (if count
+                   (let ((result '() ))
+                     (with-lazy-seq-iterator (get-next-entry buxis)
+                       (loop
+                         (multiple-value-bind (more? _ value) (get-next-entry)
+                           (declare (ignore _))
+                           (when (or (not more?)
+                                     (zerop count))
+                             (return))
+                           (when (funcall predicate value)
+                             (push value result)
+                             (decf count)))))
+                     (nreverse result))
+                   ;; no-key, no-count:
+                   (let ((result '()))
+                     (with-lazy-seq-iterator (get-next-entry buxis)
+                       (loop
+                         (multiple-value-bind (more? _ value) (get-next-entry)
+                           (declare (ignore _))
+                           (unless more? (return))
+                           (when (funcall predicate value)
+                             (push value result)))))
+                     (nreverse result)))))))
+    
     (array
-     (check-type from  (or list array-index))
-     (check-type below (or list array-index))
-     (when (listp from)
-       (setf from (apply #'array-row-major-index buxis from)))
-     (when (and below (listp below))
-       (setf below (apply #'array-row-major-index buxis below)))
-     (when (and below (< below from))
-       (error "[~S , ~S) is bad interval." from below))
-     (collect-if*-array predicate buxis key count from below from-end))
+     (check-type start (or list array-index))
+     (check-type end   (or list array-index))
+     (when (listp start)
+       (setf start (apply #'array-row-major-index buxis start)))
+     (if (not end)
+         (setf end (array-total-size buxis))
+         (when (listp end)
+           (setf end (apply #'array-row-major-index buxis end))))
+     (when (< end start)
+       (error "[~S , ~S) is bad interval." start end))
+     (if key
+         (if count
+             (if (zerop count)
+                 '()
+                 (if from-end
+                     (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall predicate (funcall key v))
+                             :do (decf count) :and :collect v :into acc
+                           :finally (return (nreverse acc)))
+                     (loop :for i :of-type array-index :from start :below end
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall predicate (funcall key v))
+                             :do (decf count) :and :collect v)))
+             ;; not-count:
+             (if from-end
+                 (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall predicate (funcall key v))
+                         :collect v :into acc
+                       :finally (return (nreverse acc)))
+                 (loop :for i :of-type array-index :from start :below end
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall predicate (funcall key v))
+                         :collect v)))
+         ;; no-key:
+         (if count
+             (if (zerop count)
+                 '()
+                 (if from-end
+                     (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall predicate v)
+                             :do (decf count) :and :collect v :into acc
+                           :finally (return (nreverse acc)))
+                     (loop :for i :of-type array-index :from start :below end
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall predicate v)
+                             :do (decf count) :and :collect v)))
+             ;; not-count:
+             (if from-end
+                 (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall predicate v)
+                         :collect v :into acc
+                       :finally (return (nreverse acc)))
+                 (loop :for i :of-type array-index :from start :below end
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall predicate v)
+                         :collect v)))))
 
     (hash-table
      (warn-order-of-hash-table-entries)
-     (if (not count)
-         (loop :for v :being :the :hash-values :of buxis
-               :when (funcall predicate (funcall key v))
-                 :collect v)
-         (loop :for v :being :the :hash-values :of buxis
-               :until (zerop count)
-               :when (funcall predicate (funcall key v))
-                 :do (decf count) :and :collect v)))))
+     (if key
+         (if count
+             (loop :for v :being :the :hash-values :of buxis
+                   :until (zerop count)
+                   :when (funcall predicate (funcall key v))
+                     :do (decf count) :and :collect v)
+             (loop :for v :being :the :hash-values :of buxis
+                   :when (funcall predicate (funcall key v))
+                     :collect v))
+         ;; no-key:
+         (if count
+             (loop :for v :being :the :hash-values :of buxis
+                   :until (zerop count)
+                   :when (funcall predicate v)
+                     :do (decf count) :and :collect v)
+             (loop :for v :being :the :hash-values :of buxis
+                   :when (funcall predicate v)
+                     :collect v))))))
 
 
 (setf (documentation 'collect-if* 'function) "
-COLLECT-IF* predicate buxis &key key count (from 0) below from-end => result
+COLLECT-IF* predicate buxis &key key count (start 0) end from-end => result
 It returns list its elements satisfies `predicate'.
 
 COLLECT-IF* is an abstraction from (loop :for x ... :when ... :collect x).
@@ -2192,15 +2265,15 @@ The difference from REMOVE-IF-NOT* is the followings:
     e.g., (collect-if*    #'oddp '(0 1 2 3 4 5) :count 2) => (1 3)
           (remove-if-not* #'oddp '(0 1 2 3 4 5) :count 2) => (1 3 4 5)
 
- 2. `from/below' is the range for collecting.
-    e.g., (collect-if*    #'oddp '(0 1 2 3 4 5) :from  1 :below 3) => (1)
-          (remove-if-not* #'oddp '(0 1 2 3 4 5) :start 1 :end   3) => (0 1 3 4 5)
+ 2. `start/end' is the range for collecting.
+    e.g., (collect-if*    #'oddp '(0 1 2 3 4 5) :start 1 :end 3) => (1)
+          (remove-if-not* #'oddp '(0 1 2 3 4 5) :start 1 :end 3) => (0 1 3 4 5)
 
 Notes
 -----
- - If `buxis' is an array, it accepts subscript-list as `from/below'.
+ - If `buxis' is an array, it accepts subscript-list as `start/end'.
  - If `buxis' is an lazy-sequence, it will be forced.
- - If `buxis' is an lazy-sequence and without `below', `from-end' is ignored.
+ - If `buxis' is an lazy-sequence and without `end', `from-end' is ignored.
 ")
 
 
@@ -2714,6 +2787,7 @@ Note
 ;;--------------------------------------------------------------------
 ;; substitute-if-not*
 ;;--------------------------------------------------------------------
+;; TODO: add check-type or impl.
 
 (defun substitute-if-not* (new predicate buxis &key key count (start 0) end from-end)
   (substitute-if* new (complement (ensure-function predicate)) buxis

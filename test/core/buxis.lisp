@@ -5270,14 +5270,14 @@
   (signals type-error (collect-if* #() '(0 1 2 3)))
   (signals type-error (collect-if* #'oddp :foo))
   (signals type-error (collect-if* #'oddp '(0 1 2 3) :key #()))
-  (signals type-error (collect-if* #'oddp '(0 1 2 3) :from nil))
-  (signals type-error (collect-if* #'oddp '(0 1 2 3) :from -1))
-  (signals type-error (collect-if* #'oddp '(0 1 2 3) :from '(1)))
-  (signals type-error (collect-if* #'oddp '(0 1 2 3) :below '(1)))
-  (signals type-error (collect-if* #'oddp '(0 1 2 3) :below -1))
+  (signals type-error (collect-if* #'oddp '(0 1 2 3) :start nil))
+  (signals type-error (collect-if* #'oddp '(0 1 2 3) :start -1))
+  (signals type-error (collect-if* #'oddp '(0 1 2 3) :start '(1)))
+  (signals type-error (collect-if* #'oddp '(0 1 2 3) :end '(1)))
+  (signals type-error (collect-if* #'oddp '(0 1 2 3) :end -1))
   (signals type-error (collect-if* #'oddp '(0 1 2 3) :count -1))
   (signals type-error (collect-if* #'oddp '(0 1 2 3) :count '(-1)))
-  (signals simple-error (collect-if* #'oddp '(0 1 2 3) :from 42 :below 24)))
+  (signals error      (collect-if* #'oddp '(0 1 2 3) :start 42 :end 24)))
 
 
 (test ?collect-if*.list
@@ -5310,14 +5310,14 @@
                         :do (decf count) :and :collect v :into acc
                       :finally (return (nreverse acc))))
       
-      (is-equal (collect-if*   #'oddp lst :from rand)
+      (is-equal (collect-if*   #'oddp lst :start rand)
                 (remove-if-not #'oddp (subseq lst rand)))
       
-      (is-equal (collect-if*   #'oddp lst :below rand)
+      (is-equal (collect-if*   #'oddp lst :end rand)
                 (remove-if-not #'oddp (subseq lst 0 rand)))
       
       (let ((rand2 (random (max 1 rand))))
-        (is-equal (collect-if*   #'oddp lst :from rand2 :below rand)
+        (is-equal (collect-if*   #'oddp lst :start rand2 :end rand)
                   (remove-if-not #'oddp (subseq lst rand2 rand)))))))
 
 
@@ -5349,14 +5349,14 @@
                           :do (decf count) :and :collect v :into acc
                         :finally (return (nreverse acc))))
         
-        (is-equal (collect-if*   #'oddp vec :from rand)
+        (is-equal (collect-if*   #'oddp vec :start rand)
                   (remove-if-not #'oddp (subseq lst rand)))
         
-        (is-equal (collect-if*   #'oddp vec :below rand)
+        (is-equal (collect-if*   #'oddp vec :end rand)
                   (remove-if-not #'oddp (subseq lst 0 rand)))
         
         (let ((rand2 (random (max 1 rand))))
-          (is-equal (collect-if*   #'oddp vec :from rand2 :below rand)
+          (is-equal (collect-if*   #'oddp vec :start rand2 :end rand)
                     (remove-if-not #'oddp (subseq lst rand2 rand))))))))
 
 
@@ -5381,14 +5381,14 @@
                         :when (oddp v)
                           :do (decf count) :and :collect v))
         
-        (is-equal (collect-if*   #'oddp lseq :from rand)
+        (is-equal (collect-if*   #'oddp lseq :start rand)
                   (remove-if-not #'oddp (subseq lst rand)))
         
-        (is-equal (collect-if*   #'oddp lseq :below rand)
+        (is-equal (collect-if*   #'oddp lseq :end rand)
                   (remove-if-not #'oddp (subseq lst 0 rand)))
         
         (let ((rand2 (random (max 1 rand))))
-          (is-equal (collect-if*   #'oddp lseq :from rand2 :below rand)
+          (is-equal (collect-if*   #'oddp lseq :start rand2 :end rand)
                     (remove-if-not #'oddp (subseq lst rand2 rand))))))))
 
 
@@ -5424,30 +5424,32 @@
                           :do (decf count) :and :collect v :into acc
                         :finally (return (nreverse acc))))
         
-        (is-equal (collect-if*   #'oddp ary :from rand)
+        (is-equal (collect-if*   #'oddp ary :start rand)
                   (remove-if-not #'oddp (subseq wlst rand)))
 
-        (is-equal (collect-if*   #'oddp ary :below rand)
+        (is-equal (collect-if*   #'oddp ary :end rand)
                   (remove-if-not #'oddp (subseq wlst 0 rand)))
         
         (unless (null lst)
           ;; MEMO: (array-subscripts #2A(() ()) 0) => error
-          (is-equal (collect-if* #'oddp ary :from rand)
-                    (collect-if* #'oddp ary :from (array-subscripts ary rand)))
+          (is-equal (collect-if* #'oddp ary :start rand)
+                    (collect-if* #'oddp ary :start (array-subscripts ary rand)))
 
-          (is-equal (collect-if* #'oddp ary :below rand)
-                    (collect-if* #'oddp ary :below (array-subscripts ary rand))))
+          (is-equal (collect-if* #'oddp ary :end rand)
+                    (collect-if* #'oddp ary :end (array-subscripts ary rand))))
         
         (let ((rand2 (random (max 1 rand))))
-          (is-equal (collect-if*   #'oddp ary :from rand2 :below rand)
+          (is-equal (collect-if*   #'oddp ary :start rand2 :end rand)
                     (remove-if-not #'oddp (subseq wlst rand2 rand))))))))
-
 
 (test ?collect-if*.hash-table
   (is (find (with-muffle-warnings
               (collect-if* #'oddp #{:foo 0 :bar 1 :baz 2 :quux 3}))
             '((1 3) (3 1))
             :test #'equal)))
+
+
+
 
 
 ;;--------------------------------------------------------------------
