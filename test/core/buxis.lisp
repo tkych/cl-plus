@@ -5653,19 +5653,19 @@
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :start nil))
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :start :foo))
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :start '(0 1)))
-  (is-true (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1)) ; check no-error
-                           :start '(0 1)))
+  (finishes (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1))
+                            :start '(0 1)))
 
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :end -1))
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :end '(0 1)))
   (signals type-error (substitute-if* 42 #'oddp '(-1 0 1) :end :foo))
-  (is-true (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1)) :end '(0 1))) ; check no-error
+  (finishes (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1)) :end '(0 1)))
 
   (signals simple-error (substitute-if* 42 #'oddp '(0 1 2 3) :start 42 :end 24))
   (signals simple-error (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1))
                                         :start '(0 2) :end '(0 1)))
-  (is-true (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1)) ; check no-error
-                           :start '(0 1) :end '(0 2))))
+  (finishes (substitute-if* 42 #'oddp #2A((-1 0 1) (-1 0 1))
+                            :start '(0 1) :end '(0 2))))
 
 
 (test ?substitute-if*.list
