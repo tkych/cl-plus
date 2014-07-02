@@ -1929,6 +1929,7 @@ REMOVE-IF* predicate buxis &key key count (start 0) end from-end => result
 ;;--------------------------------------------------------------------
 ;; remove-if-not*
 ;;--------------------------------------------------------------------
+;; TODO: add check-type or impl.
 
 (defun remove-if-not* (predicate buxis &key key count (start 0) end from-end)
   (remove-if* (complement (ensure-function predicate)) buxis
@@ -2207,12 +2208,11 @@ Notes
 ;; substitute*
 ;;--------------------------------------------------------------------
 
-(defun substitute* (new old buxis &key key count (test 'eql) (start 0) end from-end)
+(defun substitute* (new old buxis &key key count (test #'eql) (start 0) end from-end)
 
-  (check-type key   (or function symbol))
-  (check-type count (or null integer))
+  (check-type key   (or symbol function))
+  (check-type count (or null (integer 0 *)))
   (check-type test  (or function symbol))
-  (setf key (the (or function symbol) (or key #'identity)))
   
   (etypecase buxis
     (sequence
@@ -2235,138 +2235,223 @@ Notes
      (check-type end   (or null array-index))
      (when (and end (< end start))
        (error "[~S , ~S) is bad interval." start end))
-     (if (and (zerop start) (not end))
-         (if count
-             (lazy-map (lambda (v) (if (and (plusp count)
-                                            (funcall test old (funcall key v)))
-                                       (progn
-                                         (decf count) new)
-                                       v))
-                       buxis)
-             (lazy-map (lambda (v) (if (funcall test old (funcall key v))
-                                       new
-                                       v))
-                       buxis))
+     (if key
+         (if (and (zerop start) (not end))
+             (if count
+                 (lazy-map (lambda (v) (if (and (plusp count)
+                                                (funcall test old (funcall key v)))
+                                           (progn
+                                             (decf count) new)
+                                           v))
+                           buxis)
+                 (lazy-map (lambda (v) (if (funcall test old (funcall key v))
+                                           new
+                                           v))
+                           buxis))
 
-         (let ((index -1))
-           (declare (type (integer -1 *) index))
-           (if count
-               (if end
-                   (lazy-map (lambda (v)
-                               (incf index)
-                               (cond ((<= count 0) v)
-                                     ((< index start) v)
-                                     ((<= end index) v)
-                                     ((funcall test old (funcall key v))
-                                      (decf count) new)
-                                     (t v)))
-                             buxis)
-                   (lazy-map (lambda (v)
-                               (incf index)
-                               (cond ((<= count 0) v)
-                                     ((< index start) v)
-                                     ((funcall test old (funcall key v))
-                                      (decf count) new)
-                                     (t v)))
-                             buxis))
-               (if end
-                   (lazy-map (lambda (v)
-                               (incf index)
-                               (cond ((< index start) v)
-                                     ((<= end index) v)
-                                     ((funcall test old (funcall key v))
-                                      new)
-                                     (t v)))
-                             buxis)
-                   (lazy-map (lambda (v)
-                               (incf index)
-                               (cond ((< index start) v)
-                                     ((funcall test old (funcall key v))
-                                      new)
-                                     (t v)))
-                             buxis))))))
+             (let ((index -1))
+               (declare (type (integer -1 *) index))
+               (if count
+                   (if end
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((<= count 0) v)
+                                         ((< index start) v)
+                                         ((<= end index) v)
+                                         ((funcall test old (funcall key v))
+                                          (decf count) new)
+                                         (t v)))
+                                 buxis)
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((<= count 0) v)
+                                         ((< index start) v)
+                                         ((funcall test old (funcall key v))
+                                          (decf count) new)
+                                         (t v)))
+                                 buxis))
+                   (if end
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((< index start) v)
+                                         ((<= end index) v)
+                                         ((funcall test old (funcall key v))
+                                          new)
+                                         (t v)))
+                                 buxis)
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((< index start) v)
+                                         ((funcall test old (funcall key v))
+                                          new)
+                                         (t v)))
+                                 buxis)))))
+         ;; no-key:
+         (if (and (zerop start) (not end))
+             (if count
+                 (lazy-map (lambda (v) (if (and (plusp count)
+                                                (funcall test old v))
+                                           (progn
+                                             (decf count) new)
+                                           v))
+                           buxis)
+                 (lazy-map (lambda (v) (if (funcall test old v)
+                                           new
+                                           v))
+                           buxis))
+
+             (let ((index -1))
+               (declare (type (integer -1 *) index))
+               (if count
+                   (if end
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((<= count 0) v)
+                                         ((< index start) v)
+                                         ((<= end index) v)
+                                         ((funcall test old v)
+                                          (decf count) new)
+                                         (t v)))
+                                 buxis)
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((<= count 0) v)
+                                         ((< index start) v)
+                                         ((funcall test old v)
+                                          (decf count) new)
+                                         (t v)))
+                                 buxis))
+                   (if end
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((< index start) v)
+                                         ((<= end index) v)
+                                         ((funcall test old v)
+                                          new)
+                                         (t v)))
+                                 buxis)
+                       (lazy-map (lambda (v)
+                                   (incf index)
+                                   (cond ((< index start) v)
+                                         ((funcall test old v)
+                                          new)
+                                         (t v)))
+                                 buxis)))))))
     
     (hash-table
-     (let ((result (copy-hash-table buxis)))
-       (declare (type hash-table result))
-       (if (not count)
-           (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
-                 :when (funcall test old (funcall key v))
-                   :do (setf (gethash k result) new))
-           (loop :for k :being :the :hash-keys :of buxis :using (:hash-value v)
-                 :until (zerop count)
-                 :when (funcall test old (funcall key v))
-                   :do (setf (gethash k result) new)
-                       (decf count)))
-       result))
-
+     (if key
+         (if count
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :until (zerop count)
+                   :when (funcall test old (funcall key v))
+                     :do (setf (gethash k result) new)
+                         (decf count)
+                   :finally (return result))
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :when (funcall test old (funcall key v))
+                     :do (setf (gethash k result) new)
+                   :finally (return result)))
+         (if count
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :until (zerop count)
+                   :when (funcall test old v)
+                     :do (setf (gethash k result) new)
+                         (decf count)
+                   :finally (return result))
+             (loop :with result := (copy-hash-table buxis)
+                   :for k :being :the :hash-keys :of buxis :using (:hash-value v)
+                   :when (funcall test old v)
+                     :do (setf (gethash k result) new)
+                   :finally (return result)))))
+    
     (array
      (check-type start (or list array-index))
      (check-type end   (or list array-index))
      (when (listp start)
-       (setf start (the array-index (apply #'array-row-major-index buxis start))))
-     (when (and end (listp end))
-       (setf end (the array-index (apply #'array-row-major-index buxis end))))
-     (when (and end (< end start))
+       (setf start (apply #'array-row-major-index buxis start)))
+     (if (not end)
+         (setf end (array-total-size buxis))         
+         (when (listp end)
+           (setf end (apply #'array-row-major-index buxis end))))
+     (when (< end start)
        (error "[~S , ~S) is bad interval." start end))
-     (setf end (the array-index (or end (array-total-size buxis))))
-     (let ((result (copy-array buxis)))
-       (declare (type array result))
-       (if (not count)
-           (if from-end
-               (do ((i (1- end) (1- i)))
-                   ((< i start) result)
-                 (declare (type array-index-1 i))
-                 (when (funcall test old (funcall key (row-major-aref result i)))
-                   (setf (row-major-aref result i) new)))
-               ;; (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
-               ;;       :for v := (row-major-aref buxis i)
-               ;;       :when (funcall test old (funcall key v))
-               ;;         :do (setf (row-major-aref result i) new))
-               (do ((i start (1+ i)))
-                   ((<= end i) result)
-                 (declare (type array-index i))
-                 (when (funcall test old (funcall key (row-major-aref result i)))
-                   (setf (row-major-aref result i) new)))
-               ;; (loop :for i :of-type array-index
-               ;;       :from start :below end
-               ;;       :for v := (row-major-aref buxis i)
-               ;;       :when (funcall test old (funcall key v))
-               ;;         :do (setf (row-major-aref result i) new))
-               )
-           (if (zerop count)
-               result
-               (if from-end
-                   (do ((i (1- end) (1- i)))
-                       ((< i start) result)
-                     (declare (type array-index-1 i))
-                     (when (funcall test old (funcall key (row-major-aref result i)))
-                       (setf (row-major-aref result i) new)
-                       (decf count)
-                       (when (zerop count)
-                         (return result))))
-                   ;; (loop :for i :of-type array-index-1 :downfrom (1- end) :to start
-                   ;;       :for v := (row-major-aref buxis i)
-                   ;;       :until (zerop count)
-                   ;;       :when (funcall test old (funcall key v))
-                   ;;         :do (setf (row-major-aref result i) new)
-                   ;;             (decf count))
-                   (do ((i start (1+ i)))
-                       ((<= end i) result)
-                     (declare (type array-index i))
-                     (when (funcall test old (funcall key (row-major-aref result i)))
-                       (setf (row-major-aref result i) new)
-                       (decf count)
-                       (when (zerop count)
-                         (return result))))
-                   ;; (loop :for i :of-type array-index :from start :below end
-                   ;;       :for v := (row-major-aref buxis i)
-                   ;;       :until (zerop count)
-                   ;;       :when (funcall test old (funcall key v))
-                   ;;         :do (setf (row-major-aref result i) new)
-                   ;;             (decf count))
-                   )))
-       result))))
+     (if key
+         (if count
+             (if (zerop count)
+                 (copy-array buxis)
+                 (if from-end
+                     (loop :with result := (copy-array buxis)
+                           :for i :of-type array-index-1 :downfrom (1- end) :to start
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall test old (funcall key v))
+                             :do (setf (row-major-aref result i) new)
+                                 (decf count)
+                           :finally (return result))
+                     ;; key, count, no-from-end:
+                     (loop :with result := (copy-array buxis)
+                           :for i :of-type array-index :from start :below end
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall test old (funcall key v))
+                             :do (setf (row-major-aref result i) new)
+                                 (decf count)
+                           :finally (return result))))
+             ;; key, no-count:
+             (if from-end
+                 (loop :with result := (copy-array buxis)
+                       :for i :of-type array-index-1 :downfrom (1- end) :to start
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall test old (funcall key v))
+                         :do (setf (row-major-aref result i) new)
+                       :finally (return result))
+                 (loop :with result := (copy-array buxis)
+                       :for i :of-type array-index :from start :below end
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall test old (funcall key v))
+                         :do (setf (row-major-aref result i) new)
+                       :finally (return result))))
+         ;; no-key:
+         (if count
+             (if (zerop count)
+                 (copy-array buxis)
+                 (if from-end
+                     ;; no-key, count, from-end:
+                     (loop :with result := (copy-array buxis)
+                           :for i :of-type array-index-1 :downfrom (1- end) :to start
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall test old v)
+                             :do (setf (row-major-aref result i) new)
+                                 (decf count)
+                           :finally (return result))
+                     ;; no-key, count, no-from-end:
+                     (loop :with result := (copy-array buxis)
+                           :for i :of-type array-index :from start :below end
+                           :for v := (row-major-aref buxis i)
+                           :until (zerop count)
+                           :when (funcall test old v)
+                             :do (setf (row-major-aref result i) new)
+                                 (decf count)
+                           :finally (return result))))
+             ;; no-key, no-count:
+             (if from-end
+                 (loop :with result := (copy-array buxis)
+                       :for i :of-type array-index-1 :downfrom (1- end) :to start
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall test old v)
+                         :do (setf (row-major-aref result i) new)
+                       :finally (return result))
+                 (loop :with result := (copy-array buxis)
+                       :for i :of-type array-index :from start :below end
+                       :for v := (row-major-aref buxis i)
+                       :when (funcall test old v)
+                         :do (setf (row-major-aref result i) new)
+                       :finally (return result))))))))
+
 
 (setf (documentation 'substitute* 'function) "
 SUBSTITUTE* new old buxis &key key count (test 'eql) (start 0) end from-end => result

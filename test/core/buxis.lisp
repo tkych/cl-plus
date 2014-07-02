@@ -5463,17 +5463,17 @@
   (signals type-error (substitute* 42 0 '(-1 0 1) :start nil))
   (signals type-error (substitute* 42 0 '(-1 0 1) :start :foo))
   (signals type-error (substitute* 42 0 '(-1 0 1) :start '(0 1)))
-  (is-true (substitute* 42 0 #2A((-1 0 1) (-1 0 1)) :start '(0 1))) ; check no-error
+  (finishes (substitute* 42 0 #2A((-1 0 1) (-1 0 1)) :start '(0 1)))
 
   (signals type-error (substitute* 42 0 '(-1 0 1) :end -1))
   (signals type-error (substitute* 42 0 '(-1 0 1) :end :foo))
   (signals type-error (substitute* 42 0 '(-1 0 1) :end '(0 1)))
-  (is-true (substitute* 42 0 #2A((-1 0 1) (-1 0 1)) :end '(0 1))) ; check no-error
+  (finishes (substitute* 42 0 #2A((-1 0 1) (-1 0 1)) :end '(0 1)))
 
   (signals simple-error (substitute* 42 0 '(0 1 2 3) :start 42 :end 24))
   (signals simple-error (substitute* 42 0 #2A((-1 0 1) (-1 0 1))
                                      :start '(0 2) :end '(0 1)))
-  (is-true (substitute* 42 0 #2A((-1 0 1) (-1 0 1)) ; check no-error
+  (finishes (substitute* 42 0 #2A((-1 0 1) (-1 0 1))
                         :start '(0 1) :end '(0 2))))
 
 
@@ -5622,6 +5622,14 @@
                (length result)))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*)))))
+
+      (let* ((count (random (max 1 (hash-table-count ht))))
+             (result* (with-muffle-warnings
+                        (substitute* 42 0 ht :count count))))
+        (is-equal (loop :for v :being :the :hash-values :in result* :collect v)
+                  (substitute 42 0
+                              (loop :for v :being :the :hash-values :in ht :collect v)
+                              :count count)))
 
       (let ((result* (substitute* 42 0 ht :key #'1+))
             (result  (loop :for (k . v) :in alst
