@@ -5009,13 +5009,19 @@
           (alst (loop :for i :from 0
                       :for v :in vals
                       :collect (cons i v))))
-            
+      
       (let ((result* (remove* 0 ht))
             (result  (remove  0 alst :key #'cdr)))
         (is-= (hash-table-count result*)
               (length result))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*)))))
+      
+      (let* ((count (random (max 1 (hash-table-count ht))))
+             (result* (with-muffle-warnings
+                        (remove* 0 ht :count count))))
+        (is-true (subsetp (loop :for v :being :the :hash-values :in result* :collect v)
+                          (loop :for v :being :the :hash-values :in ht :collect v))))
 
       (let ((result* (remove* 0 ht :key #'1+))
             (result  (remove  0 alst :key (lambda (e) (1+ (cdr e))))))
@@ -5122,15 +5128,15 @@
       
       (let ((result* (remove-if* #'oddp ht))
             (result  (remove-if  #'oddp alst :key #'cdr)))
-        (is (= (hash-table-count result*)
-               (length result)))
+        (is-= (hash-table-count result*)
+              (length result))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*)))))
 
       (let ((result* (remove-if* #'oddp ht :key #'1+))
             (result  (remove-if  #'oddp alst :key (lambda (e) (1+ (cdr e))))))
-        (is (= (hash-table-count result*)
-               (length result)))
+        (is-= (hash-table-count result*)
+              (length result))
         (is-true (loop :for (i . v) :in result
                        :always (= v (gethash i result*))))))))
 
