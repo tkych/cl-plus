@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:04:03 tkych
-
-;; cl-plus/src/core/array.lisp
+;;;; cl-plus/src/core/array.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

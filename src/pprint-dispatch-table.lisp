@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:32:02 tkych
-
-;; cl-plus/src/core/pprint-dispatch-table.lisp
+;;;; cl-plus/src/core/pprint-dispatch-table.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

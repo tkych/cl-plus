@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:34:10 tkych
-
-;; cl-plus/cl-plus-test.asd
+;;;; cl-plus/cl-plus-test.asd
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:26:54 tkych
-
-;; cl-plus/test/core/sequens.lisp
+;;;; cl-plus/test/core/sequens.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

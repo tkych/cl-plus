@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:24:33 tkych
-
-;; cl-plus/test/cdr/cdr-5.lisp
+;;;; cl-plus/test/cdr/cdr-5.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

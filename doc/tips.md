@@ -1,5 +1,4 @@
-Last modified: 2014-06-29 10:31:18 tkych
-
+<!-- cl-plus/doc/tips.md -->
 <!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/doc/tips.md") -->
 
 ((CL+ )): Tips

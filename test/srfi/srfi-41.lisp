@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:28:13 tkych
-
-;; cl-plus/test/srfi/srfi-41.lisp
+;;;; cl-plus/test/srfi/srfi-41.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

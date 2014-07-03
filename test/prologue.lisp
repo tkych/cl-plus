@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:27:26 tkych
-
-;; cl-plus/test/prelude.lisp
+;;;; cl-plus/test/prelude.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:31:02 tkych
-
-;; cl-plus/test/test-dump-fn.lisp
+;;;; cl-plus/test/test-dump-fn.lisp
 
 ;; For making function at READ TIME, e.g., '#[1..] => #[1..]
 ;; This file is to check whether cl implementaion is able to dump

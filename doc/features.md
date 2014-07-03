@@ -1,5 +1,4 @@
-Last modified: 2014-07-01 12:26:18 tkych
-
+<!-- cl-plus/doc/features.md -->
 <!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/doc/features.md") -->
 
 ((CL+)) : Features

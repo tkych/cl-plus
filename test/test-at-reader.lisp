@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:28:49 tkych
-
-;; cl-plus/test/test-at-reader.lisp
+;;;; cl-plus/test/test-at-reader.lisp
 
 ;;====================================================================
 ;; Test, At-reader

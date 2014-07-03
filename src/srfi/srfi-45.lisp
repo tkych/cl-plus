@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:32:31 tkych
-
-;; cl-plus/src/srfi/srfi-45.lisp
+;;;; cl-plus/src/srfi/srfi-45.lisp
 
 ;; Copyright (C) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

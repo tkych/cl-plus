@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:24:48 tkych
-
-;; cl-plus/test/clrfi/clrfi-1.lisp
+;;;; cl-plus/test/clrfi/clrfi-1.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

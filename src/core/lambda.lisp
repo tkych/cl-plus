@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 16:20:06 tkych
-
-;; cl-plus/src/core/lambda.lisp
+;;;; cl-plus/src/core/lambda.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.

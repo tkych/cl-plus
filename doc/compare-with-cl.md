@@ -1,3 +1,5 @@
+<!-- cl-plus/doc/compare-with-cl.md -->
+<!-- (cl-gfm:preview #p"~/Dropbox/cl-projects/cl-plus/doc/compare-with-cl.md") -->
 
 ((CL+)) : Compare with pure CL
 ==============================

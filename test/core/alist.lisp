@@ -1,6 +1,4 @@
-;;;; Last modified: 2014-06-29 10:25:18 tkych
-
-;; cl-plus/test/core/alist.lisp
+;;;; cl-plus/test/core/alist.lisp
 
 ;; Copyright (c) 2014 Takaya OCHIAI <tkych.repl@gmail.com>
 ;; This software is released under the MIT License.
