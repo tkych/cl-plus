@@ -486,6 +486,7 @@
   (signals type-error (vals :foo))
   (signals type-error (vals :foo :count -1))
   (signals type-error (vals :foo :when #()))
+  (signals type-error (vals :foo :unless #()))
   (signals type-error (vals :foo :key-test #())))
 
 
@@ -502,6 +503,11 @@
       (is (set-equal (vals ht :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
+      (is (set-equal (vals ht :unless (lambda (k v) (declare (ignore k)) (oddp v)))
+                     (remove-if #'oddp vs)
+                     :test #'=))
+      (is (null (vals ht :when   (lambda (k v) (declare (ignore k)) (oddp v))
+                         :unless (lambda (k v) (declare (ignore k)) (oddp v)))))
       (let ((count (random (max 1 (length vs)))))
         (is (subsetp (vals ht :count count)
                      vs
@@ -519,6 +525,11 @@
       (is (set-equal (vals alst :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
+      (is (set-equal (vals alst :unless (lambda (k v) (declare (ignore k)) (oddp v)))
+                     (remove-if #'oddp vs)
+                     :test #'=))
+      (is (null (vals alst :when   (lambda (k v) (declare (ignore k)) (oddp v))
+                           :unless (lambda (k v) (declare (ignore k)) (oddp v)))))
       (let ((count (random (max 1 (length vs)))))
         (is (subsetp (vals alst :count count)
                      vs
@@ -536,6 +547,11 @@
       (is (set-equal (vals plst :when (lambda (k v) (declare (ignore k)) (oddp v)))
                      (remove-if-not #'oddp vs)
                      :test #'=))
+      (is (set-equal (vals plst :unless (lambda (k v) (declare (ignore k)) (oddp v)))
+                     (remove-if #'oddp vs)
+                     :test #'=))
+      (is (null (vals plst :when   (lambda (k v) (declare (ignore k)) (oddp v))
+                           :unless (lambda (k v) (declare (ignore k)) (oddp v)))))
       (let ((count (random (max 1 (length vs)))))
         (is (subsetp (vals plst :count count)
                      vs
