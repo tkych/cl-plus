@@ -874,112 +874,123 @@ Examples
 ;;--------------------------------------------------------------------
 ;; keys
 ;;--------------------------------------------------------------------
-;; TODO: add :unless
 
-(defun keys (tabula &key count when (key-test #'equal))
+(defun keys (tabula &key count (when nil when-pred-p) (unless nil unless-pred-p)
+                      (key-test #'equal))
+
   (check-type tabula   tabula)
   (check-type count    (or null (integer 0 *)))
   (check-type when     (or symbol function))
+  (check-type unless   (or symbol function))
   (check-type key-test (or function symbol))
-  (if count
-      (if when
-          (etypecase tabula
-            (hash-table
-             (loop :until (zerop count)
-                   :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-                   :when (funcall when k v)
-                     :do (decf count)
-                     :and :collect k))
-            
-            (alist
-             (loop :with checked-keys := '()
-                   :until (zerop count)
-                   :for (k . v) :in tabula
-                   :unless (member k checked-keys :test key-test)
-                     :do (push k checked-keys)
-                         (decf count)
-                     :and :when (funcall when k v)
-                            :collect k))
-            (plist+
-             (loop :with checked-keys := '()
-                   :until (zerop count)
-                   :for (k v . nil) :on tabula :by #'cddr
-                   :unless (member k checked-keys :test key-test)
-                     :do (push k checked-keys)
-                         (decf count)
-                     :and :when (funcall when k v)
-                            :collect k)))
-      
-          ;; count, no-when:
-          (etypecase tabula
-            (hash-table
-             (loop :until (zerop count)
-                   :for k :being :the :hash-keys :of tabula
-                   :do (decf count)
-                   :collect k))
-            
-            (alist
-             (loop :until (zerop count)
-                   :with checked-keys := '()
-                   :for (k . nil) :in tabula
-                   :unless (member k checked-keys :test key-test)
-                     :do (push k checked-keys) (decf count)
-                     :and :collect k))
-            
-            (plist+     
-             (loop :until (zerop count)
-                   :with checked-keys := '()
-                   :for (k . nil) :on tabula :by #'cddr
-                   :unless (member k checked-keys :test key-test)
-                     :do (push k checked-keys) (decf count)
-                     :and :collect k)))))
 
-  ;; no-count:
-  (if when
-      (etypecase tabula
-        (hash-table
-         (loop :for k :being :the :hash-keys :of tabula :using (:hash-value v)
-               :when (funcall when k v)
-                 :collect k))
-        
-        (alist
-         (loop :with checked-keys := '()
-               :for (k . v) :in tabula
-               :unless (member k checked-keys :test key-test)
-                 :do (push k checked-keys)
-                 :and :when (funcall when k v)
-                        :collect k))
-        
-        (plist+
-         (loop :with checked-keys := '()
-               :for (k v . nil) :on tabula :by #'cddr
-               :unless (member k checked-keys :test key-test)
-                 :do (push k checked-keys)
-                 :and :when (funcall when k v)
-                        :collect k)))
+  (let ((satisfies (if when-pred-p
+                       (if unless-pred-p
+                           (lambda (k v) (and (funcall when k v)
+                                              (not (funcall unless k v))))
+                           when)
+                       (if unless-pred-p
+                           (ensure-function (complement unless))
+                           nil))))
+    (if count
+        (if satisfies
+            (etypecase tabula
+              (hash-table
+               (loop :until (zerop count)
+                     :for k :being :the :hash-keys :of tabula :using (:hash-value v)
+                     :when (funcall satisfies k v)
+                       :do (decf count)
+                       :and :collect k))
+            
+              (alist
+               (loop :with checked-keys := '()
+                     :until (zerop count)
+                     :for (k . v) :in tabula
+                     :unless (member k checked-keys :test key-test)
+                       :do (push k checked-keys)
+                           (decf count)
+                       :and :when (funcall satisfies k v)
+                              :collect k))
+              (plist+
+               (loop :with checked-keys := '()
+                     :until (zerop count)
+                     :for (k v . nil) :on tabula :by #'cddr
+                     :unless (member k checked-keys :test key-test)
+                       :do (push k checked-keys)
+                           (decf count)
+                       :and :when (funcall satisfies k v)
+                              :collect k)))
       
-      ;; no-count, no-when:
-      (etypecase tabula
-        (hash-table
-         (loop :for k :being :the :hash-keys :of tabula :collect k))
+            ;; count, no-satisfies:
+            (etypecase tabula
+              (hash-table
+               (loop :until (zerop count)
+                     :for k :being :the :hash-keys :of tabula
+                     :do (decf count)
+                     :collect k))
+            
+              (alist
+               (loop :until (zerop count)
+                     :with checked-keys := '()
+                     :for (k . nil) :in tabula
+                     :unless (member k checked-keys :test key-test)
+                       :do (push k checked-keys) (decf count)
+                       :and :collect k))
+            
+              (plist+     
+               (loop :until (zerop count)
+                     :with checked-keys := '()
+                     :for (k . nil) :on tabula :by #'cddr
+                     :unless (member k checked-keys :test key-test)
+                       :do (push k checked-keys) (decf count)
+                       :and :collect k)))))
+
+    ;; no-count:
+    (if satisfies
+        (etypecase tabula
+          (hash-table
+           (loop :for k :being :the :hash-keys :of tabula :using (:hash-value v)
+                 :when (funcall satisfies k v)
+                   :collect k))
+          
+          (alist
+           (loop :with checked-keys := '()
+                 :for (k . v) :in tabula
+                 :unless (member k checked-keys :test key-test)
+                   :do (push k checked-keys)
+                   :and :when (funcall satisfies k v)
+                          :collect k))
+          
+          (plist+
+           (loop :with checked-keys := '()
+                 :for (k v . nil) :on tabula :by #'cddr
+                 :unless (member k checked-keys :test key-test)
+                   :do (push k checked-keys)
+                   :and :when (funcall satisfies k v)
+                          :collect k)))
         
-        (alist
-         (loop :with checked-keys := '()
-               :for (k . nil) :in tabula
-               :unless (member k checked-keys :test key-test)
-                 :do (push k checked-keys)
-                 :and :collect k))
-        
-        (plist+     
-         (loop :with checked-keys := '()
-               :for (k . nil) :on tabula :by #'cddr
-               :unless (member k checked-keys :test key-test)
-                 :do (push k checked-keys)
-                 :and :collect k)))))
+        ;; no-count, no-satisfies:
+        (etypecase tabula
+          (hash-table
+           (loop :for k :being :the :hash-keys :of tabula :collect k))
+          
+          (alist
+           (loop :with checked-keys := '()
+                 :for (k . nil) :in tabula
+                 :unless (member k checked-keys :test key-test)
+                   :do (push k checked-keys)
+                   :and :collect k))
+          
+          (plist+     
+           (loop :with checked-keys := '()
+                 :for (k . nil) :on tabula :by #'cddr
+                 :unless (member k checked-keys :test key-test)
+                   :do (push k checked-keys)
+                   :and :collect k))))))
 
 
 (setf (documentation 'keys 'function) "
-KEYS tabula &key count when (key-test 'equal) => keys-list
+KEYS tabula &key count when unless (key-test 'equal) => keys-list
 ")
 
 
