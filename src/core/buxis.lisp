@@ -2293,8 +2293,11 @@ Notes
      (check-type end   (or null (integer 0 *)))
      (when (and end (< end start))
        (error "[~S , ~S) is bad interval." start end))
-     (substitute new old buxis :test test :count count :key key
-                               :from-end from-end :start start :end end))
+     (if key
+         (substitute new old buxis :test test :count count :key key
+                                   :from-end from-end :start start :end end)
+         (substitute new old buxis :test test :count count
+                                   :from-end from-end :start start :end end)))
 
     (lazy-sequence
      ;; TODO:
@@ -2551,8 +2554,11 @@ Note
      (check-type end   (or null (integer 0 *)))
      (when (and end (< end start))
        (error "[~S , ~S) is bad interval." start end))
-     (substitute-if new predicate buxis
-                    :key key :count count :from-end from-end :start start :end end))
+     (if key
+         (substitute-if new predicate buxis
+                        :key key :count count :from-end from-end :start start :end end)
+         (substitute-if new predicate buxis
+                        :count count :from-end from-end :start start :end end)))
 
     (lazy-sequence
      ;; TODO:
