@@ -399,76 +399,124 @@
 ;;--------------------------------------------------------------------
 ;; ref+
 ;;--------------------------------------------------------------------
-;; TODO:
 
-(test ?ref+
-  (initialize-variables)
+(defmacro mv-is-equal (value-form value-list &rest reason-args)
+  `(is (equal (multiple-value-list ,value-form)
+              ,value-list)
+       ,@reason-args))
 
-  ;; hash-table
-  (is (not (ref+ ht :xxx)))
-  (is (= 42 (ref+ ht :xxx 42)))
-  (is (= (ref+ ht :foo) 0))
-  (is (= (ref+ ht :bar) 1))
-  (is (= (ref+ ht :baz) 2))
 
-  (setf (ref+ ht :foo) 10)
-  (is (= 10 (gethash :foo ht)))
+(test ?ref+.error
+  (signals type-error (ref+ #() :foo)))
 
-  (setf (ref+ ht :answer) 42)
-  (is (= 42 (gethash :answer ht)))
 
-  (incf (ref+ ht :bar))
-  (is (= 2 (gethash :bar ht)))
+(test ?ref+.hash-table
+  (for-all ((vals (gen-list)))
+    (let ((ht (loop :with h := (make-hash-table :test #'equal)
+                    :for k :from 0
+                    :for v :in vals
+                    :do (setf (gethash k h) v)
+                    :finally (return h)))
+          (size (length vals)))
+      ;; (repl-utilities:dbgv () vals alst)
+      (mv-is-equal (ref+ ht :xxx)
+                   '(nil nil))
+      (mv-is-equal (ref+ ht :xxx 'not-found)
+                   '(not-found nil))
 
-  (decf (ref+ ht :bar))
-  (is (= 1 (gethash :bar ht)))
-  
-  (incf (ref+ ht :good 0))
-  (is (= 1 (gethash :good ht)))
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ ht k)
+                             (list v T)))
+      
+      (dotimes (k size)
+        (incf (ref+ ht k) 10))
+      ;; (repl-utilities:dbgv () vals alst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ ht k)
+                             (list (+ v 10) T)))
 
-  ;; alist
-  (is (not (ref+ alst :xxx)))
-  (is (= 42 (ref+ alst :xxx 42)))
-  (is (= (ref+ alst :foo) 0))
-  (is (= (ref+ alst :bar) 1))
-  (is (= (ref+ alst :baz) 2))
+      (dotimes (k size)
+        (decf (ref+ ht k) 20))
+      ;; (repl-utilities:dbgv () vals alst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ ht k)
+                             (list (- v 10) T))))))
 
-  (setf (ref+ alst :foo) 10)
-  (is (= 10 (cdr (assoc :foo alst))))
 
-  (setf (ref+ alst :answer) 42)
-  (is (= 42 (cdr (assoc :answer alst))))
+(test ?ref+.alist
+  (for-all ((vals (gen-list)))
+    (let ((alst (loop :for k :from 0
+                      :for v :in vals
+                      :collect (cons k v) :into acc
+                      :collect (cons k (+ 42 v)) :into dup
+                      :finally (return (append acc dup))))
+          (size (length vals)))
 
-  (incf (ref+ alst :bar))
-  (is (= 2 (cdr (assoc :bar alst))))
+      ;; (repl-utilities:dbgv () vals alst)
+      (mv-is-equal (ref+ alst :xxx)
+                   '(nil nil))
+      (mv-is-equal (ref+ alst :xxx 'not-found)
+                   '(not-found nil))
+      
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ alst k)
+                             (list v T)))
+      
+      (dotimes (k size)
+        (incf (ref+ alst k) 10))
+      ;; (repl-utilities:dbgv ('incf) alst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ alst k)
+                             (list (+ v 10) T)))
 
-  (decf (ref+ alst :bar))
-  (is (= 1 (cdr (assoc :bar alst))))
-  
-  (incf (ref+ alst :good 0))
-  (is (= 1 (cdr (assoc :good alst))))
+      (dotimes (k size)
+        (decf (ref+ alst k) 20))
+      ;; (repl-utilities:dbgv ('decf) alst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ alst k)
+                             (list (- v 10) T))))))
 
-  ;; plist
-  (is (not (ref+ plst :xxx)))
-  (is (= 42 (ref+ plst :xxx 42)))
-  (is (= (ref+ plst :foo) 0))
-  (is (= (ref+ plst :bar) 1))
-  (is (= (ref+ plst :baz) 2))
 
-  (setf (ref+ plst :foo) 10)
-  (is (= 10 (getf plst :foo)))
+(test ?ref+.plist
+  (for-all ((vals (gen-list)))
+    (let ((plst (loop :for k :from 0
+                      :for v :in vals
+                      :nconc (list k v) :into acc
+                      :nconc (list k (+ 42 v)) :into dup
+                      :finally (return (append acc dup))))
+          (size (length vals)))
+      ;; (repl-utilities:dbgv () vals plst)
+      (mv-is-equal (ref+ plst :xxx)
+                   '(nil nil))
+      (mv-is-equal (ref+ plst :xxx 'not-found)
+                   '(not-found nil))
+      
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ plst k)
+                             (list v T)))
+      
+      (dotimes (k size)
+        (incf (ref+ plst k) 10))
+      ;; (repl-utilities:dbgv ('incf) plst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ plst k)
+                             (list (+ v 10) T)))
 
-  (setf (ref+ plst :answer) 42)
-  (is (= 42 (getf plst :answer)))
-
-  (incf (ref+ plst :bar))
-  (is (= 2 (getf plst :bar)))
-
-  (decf (ref+ plst :bar))
-  (is (= 1 (getf plst :bar)))
-  
-  (incf (ref+ plst :good 0))
-  (is (= 1 (getf plst :good))))
+      (dotimes (k size)
+        (decf (ref+ plst k) 20))
+      ;; (repl-utilities:dbgv ('decf) plst)
+      (loop :for k :from 0
+            :for v :in vals
+            :do (mv-is-equal (ref+ plst k)
+                             (list (- v 10) T))))))
 
 
 ;;--------------------------------------------------------------------
