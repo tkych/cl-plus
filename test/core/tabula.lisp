@@ -294,31 +294,106 @@
 ;;--------------------------------------------------------------------
 ;; add+
 ;;--------------------------------------------------------------------
-;; TODO:
 
-(test ?add+
-  (initialize-variables)
-  
-  (is (equalp #{} (add+ #{} #{} #{})))
-  (is (equalp ht (add+ #{:foo 0} #{:bar 1} #{:baz 2})))
-  (is (equalp ht (add+ #{:foo 10 :bar 11 :baz 12}
-                       #{:foo 0 :bar 1 :baz 2})))
-  (is (equalp ht (add+ #{:foo 0} '(:bar 1) #{:baz 2})))
-  (is (equalp ht (add+ #{:foo 0} #{:bar 1} '((:baz . 2)))))
-  (is (equalp ht (add+ #{} '(:foo 0 :bar 1 :baz 2))))
+(test ?add+.error
+  (signals type-error (add+ #()))
+  (signals type-error (add+ '() #()))
+  (signals type-error (add+ '() '() #()))
+  (signals type-error (add+ (make-hash-table) '() #())))
 
-  (is (equal '() (add+ '() '() '())))
-  (is (alist= alst (add+ '((:foo . 0)) '((:bar . 1)) '((:baz . 2)))))
-  (is (alist= alst (add+ '((:foo . 10) (:bar . 11) (:baz . 12))
-                         '((:foo .  0) (:bar .  1) (:baz .  2)))))
-  (is (alist= alst (add+ '((:foo . 0)) #{:bar 1} '((:baz . 2)))))
-  (is (alist= alst (add+ '((:foo . 0)) '(:bar 1) #{:baz 2})))
 
-  (is (plist= plst (add+ '(:foo 0) '(:bar 1) '(:baz 2))))
-  (is (plist= plst (add+ '(:foo 10 :bar 11 :baz 12)
-                         '(:foo  0 :bar  1 :baz  2))))
-  (is (plist= plst (add+ '(:foo 0) #{:bar 1} '((:baz . 2)))))
-  (is (plist= plst (add+ '(:foo 0) #{:bar 1} '(:baz 2)))))
+(test ?add+.hash-table
+  ;; hash-table
+  (is (hash-table= (add+ #{})
+                   #{}))
+  (is (hash-table= (add+ #{:foo 0})
+                   #{:foo 0}))
+  (is (hash-table= (add+ #{:foo 0} #{:bar 1} #{:baz 2})
+                   #{:foo 0 :bar 1 :baz 2}))
+  (is (hash-table= (add+ #{:foo 0} #{:bar 1} #{:foo 42})
+                   #{:foo 42 :bar 1}))
+  (is (hash-table= (add+ #{:foo 0 :bar 1 :baz 2}
+                         #{:foo 42 :bar 1 :baz 55})
+                   #{:foo 42 :bar 1 :baz 55}))
+  ;; alist
+  (is (hash-table= (add+ #{} '())
+                   #{}))
+  (is (hash-table= (add+ #{} '((:bar . 1)))
+                   #{:bar 1}))
+  (is (hash-table= (add+ #{:foo 0} '((:foo . 42)))
+                   #{:foo 42}))
+  (is (hash-table= (add+ #{:foo 0 :bar 1 :baz 2}
+                         '((:foo . 42) (:bar . 1) (:baz . 55)))
+                   #{:foo 42 :bar 1 :baz 55}))
+  ;; plist
+  (is (hash-table= (add+ #{} '(:bar 1))
+                   #{:bar 1}))
+  (is (hash-table= (add+ #{:foo 0} '(:foo 42))
+                   #{:foo 42}))
+  (is (hash-table= (add+ #{:foo 0} '((:foo . 33)) '(:foo 42))
+                   #{:foo 42}))
+  (is (hash-table= (add+ #{:foo 0 :bar 1 :baz 2}
+                         '(:foo 42 :bar 1 :baz 55))
+                   #{:foo 42 :bar 1 :baz 55})))
+
+
+(test ?add+.alist
+  ;; alist
+  (is (alist= (add+ '())
+              '()))
+  (is (alist= (add+ '((:foo . 0)))
+              '((:foo . 0))))
+  (is (alist= (add+ '((:foo . 0)) '((:bar . 1)) '((:baz . 2)))
+              '((:foo . 0) (:bar . 1) (:baz . 2))))
+  (is (alist= (add+ '((:foo . 0)) '((:bar . 1)) '((:foo . 42)))
+              '((:foo . 42) (:bar . 1))))
+  (is (alist= (add+ '((:foo . 0) (:bar . 1) (:baz . 2))
+                    '((:foo . 42) (:baz . 55)))
+              '((:foo . 42) (:bar . 1) (:baz . 55))))
+  ;; hash-table
+  (is (alist= (add+ '() #{})
+              '()))
+  (is (alist= (add+ '() #{:bar 1})
+              '((:bar . 1))))
+  (is (alist= (add+ '((:foo . 0)) #{:foo 42})
+              '((:foo . 42))))
+  (is (alist= (add+ '((:foo . 0) (:bar . 1) (:baz . 2))
+                    #{:foo 42 :baz 55})
+              '((:foo . 42) (:bar . 1) (:baz . 55))))
+  ;; plist
+  (is (alist= (add+ '() '(:bar 1))
+              '((:bar . 1))))
+  (is (alist= (add+ '((:foo . 0)) '(:foo 42))
+              '((:foo . 42))))
+  (is (alist= (add+ '((:foo . 0)) #{:foo 33} '(:foo 42))
+              '((:foo . 42))))
+  (is (alist= (add+ '((:foo . 0) (:bar . 1) (:baz . 2))
+                    '(:foo 42 :baz 55))
+              '((:foo . 42) (:bar . 1) (:baz . 55)))))
+
+
+(test ?add+.plist
+  ;; plist
+  (is (plist= (add+ '(:foo 0))
+              '(:foo 0)))
+  (is (plist= (add+ '(:foo 0) '(:bar 1))
+              '(:foo 0 :bar 1)))
+  (is (plist= (add+ '(:foo 0) '(:foo 42))
+              '(:foo 42)))
+  (is (plist= (add+ '(:foo 0 :bar 1 :baz 2) '(:foo 42 :baz 55))
+              '(:foo 42 :bar 1 :baz 55)))
+  ;; alist
+  (is (plist= (add+ '(:foo 0) '((:bar . 1)) '((:baz . 2)))
+              '(:foo 0 :bar 1 :baz 2)))
+  (is (plist= (add+ '(:foo 0) '((:bar . 1)) '((:foo . 42)))
+              '(:foo 42 :bar 1)))
+  ;; hash-table
+  (is (plist= (add+ '(:foo 0) #{:bar 1})
+              '(:foo 0 :bar 1)))
+  (is (plist= (add+ '(:foo 0) #{:foo 42})
+              '(:foo 42)))
+  (is (plist= (add+ '(:foo 0) #{:foo 33} '(:foo 42))
+              '(:foo 42))))
 
 
 ;;--------------------------------------------------------------------

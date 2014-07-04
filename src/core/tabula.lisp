@@ -429,6 +429,7 @@ Notes
              :return (values v t)
            :finally (return (values default nil))))))
 
+
 (setf (documentation 'ref+ 'function) "
 REF+ tabula key &optional default key-test => value, present-p
 
@@ -489,6 +490,7 @@ Notes
                  ,store)
               `(ref+ ,access-form ,key-tmp ,default-tmp)))))
 
+
 (setf (documentation '(setf ref+) 'function) "
  (SETF REF+) new-value tabula-place key &optional default test => value
 
@@ -507,23 +509,83 @@ Note
 ;;--------------------------------------------------------------------
 ;; add+
 ;;--------------------------------------------------------------------
-;;  &key (key-test 'equal) ensure-unique-keys
 
-(defun add+ (&rest tabulae)
-  (labels ((rec (acc tabs)
-             (if (null tabs)
-                 acc
-                 (destructuring-bind (t1 . ts) tabs
-                   (dotab2 (k v t1)
-                     (setf (ref+ acc k) v))
-                   (rec acc ts)))))
-    (if (null tabulae)
-        nil
-        (destructuring-bind (t1 . ts) tabulae
-          (etypecase t1
-            (hash-table (rec (copy-hash-table t1) ts))
-            (alist      (rec (copy-alist t1) ts))
-            (t          (rec t1 ts)))))))
+(defun add+ (tabula &rest tabulae)
+  (check-type tabula tabula)
+  (if (null tabulae)
+      (etypecase tabula
+        (hash-table
+         (copy-hash-table tabula))
+        (alist
+         (copy-alist tabula))
+        (plist+
+         (copy-list tabula)))
+      (progn
+        (dolist (tab tabulae) (check-type tab tabula))
+        (etypecase tabula
+          (hash-table
+           (let ((result (copy-hash-table tabula)))
+             (dolist (tab tabulae)
+               (etypecase tab
+                 (hash-table
+                  (maphash (lambda (k v)
+                             (setf (gethash k result) v))
+                           tab))
+                 (alist
+                  (loop :for (k . v) :in (reverse tab)
+                        :do (setf (gethash k result) v)))
+                 (plist
+                  (loop :for (v k . nil) :on (reverse tab) :by #'cddr
+                        :do (setf (gethash k result) v)))))
+             result))
+        
+          (alist
+           (let ((result (copy-alist tabula)))
+             (dolist (tab tabulae)
+               (etypecase tab
+                 (hash-table
+                  (maphash (lambda (k v)
+                             (push (cons k v) result))
+                           tab))
+                 (alist
+                  (setf result (append (copy-alist tab) result)))
+                 (plist+
+                  (loop :for (v k . nil) :on (reverse tab) :by #'cddr
+                        :do (push (cons k v) result)))))
+             result))
+        
+          (plist+
+           (let ((result (copy-list tabula)))
+             (dolist (tab tabulae)
+               (etypecase tab
+                 (hash-table
+                  (loop :with acc := '()
+                        :for k :being :the :hash-keys :of tab :using (:hash-value v)
+                        :do (push v acc)
+                            (push k acc)
+                        :finally (return (setf result (append acc result)))))
+                 (alist
+                  (loop :for (k2 . v2) :in (reverse tab)
+                        :do (push v2 result)
+                            (push k2 result)))
+                 (plist
+                  (setf result (append (copy-list tab) result)))))
+             result))))))
+
+
+(setf (documentation 'add+ 'function) "
+ADD+ tabula &rest tabulae => result-tabula
+
+Returns new tabula which is added `tabula' and `tabulae', result type
+is same as `tabula' type.
+
+
+Note
+----
+ - If `tabula' is an empty list, it is interpreted an empty ALIST.
+ - It rises a type-error if `tabula' is not tabula or there is non-tabula
+   object in `tabulae'.
+")
 
 
 ;;--------------------------------------------------------------------
