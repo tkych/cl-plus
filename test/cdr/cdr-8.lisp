@@ -14,7 +14,7 @@
   (:export #:?cdr-8)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.cdr.cdr-8
                 #:*epsilon-for-comparing-float*
                 #:equals
@@ -32,7 +32,7 @@
 
 (in-package #:cl-plus.test.cdr.cdr-8)
 
-(def-suite ?cdr-8 :in all)
+(def-suite ?cdr-8 :in ?all)
 (in-suite ?cdr-8)
 
 ;;--------------------------------------------------------------------

@@ -60,7 +60,7 @@ References
   (:export #:?srfi-19)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.srfi.srfi-19
                 ;; Current time and clock resolution
                 #:current-date
@@ -149,7 +149,7 @@ References
 
 (in-package #:cl-plus.test.srfi.srfi-19)
 
-(def-suite ?srfi-19 :in all)
+(def-suite ?srfi-19 :in ?all)
 (in-suite ?srfi-19)
 
 

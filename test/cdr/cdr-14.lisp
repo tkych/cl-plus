@@ -14,11 +14,11 @@
   (:export #:?cdr-14)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all))
+                #:?all))
 
 (in-package #:cl-plus.test.cdr.cdr-14)
 
-(def-suite ?cdr-14 :in all)
+(def-suite ?cdr-14 :in ?all)
 (in-suite ?cdr-14)
 
 ;;--------------------------------------------------------------------

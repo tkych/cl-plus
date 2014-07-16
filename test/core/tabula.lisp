@@ -21,7 +21,7 @@
                 #:copy-hash-table
                 #:set-equal)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -64,7 +64,7 @@
 
 (in-package #:cl-plus.test.core.tabula)
 
-(def-suite ?tabula :in all)
+(def-suite ?tabula :in ?all)
 (in-suite ?tabula)
 (in-readtable cl+)
 

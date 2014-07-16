@@ -14,7 +14,7 @@
   (:export #:?plist)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -32,7 +32,7 @@
 
 (in-package #:cl-plus.test.core.plist)
 
-(def-suite ?plist :in all)
+(def-suite ?plist :in ?all)
 (in-suite ?plist)
 
 

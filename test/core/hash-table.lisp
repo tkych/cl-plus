@@ -23,11 +23,11 @@
   (:import-from #:alexandria
                 #:copy-hash-table)
   (:import-from #:cl-plus-test
-                #:all))
+                #:?all))
 
 (in-package #:cl-plus.test.core.hash-table)
 
-(def-suite ?hash-table :in all)
+(def-suite ?hash-table :in ?all)
 (in-suite ?hash-table)
 (in-readtable cl+sharp-brace)
 

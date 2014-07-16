@@ -14,7 +14,7 @@
   (:export #:?function)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:named-readtables
                 #:in-readtable)
   (:import-from #:cl-plus.src.readtables
@@ -35,7 +35,7 @@
 
 (in-package #:cl-plus.test.core.function)
 
-(def-suite ?function :in all)
+(def-suite ?function :in ?all)
 (in-suite ?function)
 
 (in-readtable cl+)

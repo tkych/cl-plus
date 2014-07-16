@@ -14,7 +14,7 @@
   (:export #:?alist)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -28,7 +28,7 @@
 
 (in-package #:cl-plus.test.core.alist)
 
-(def-suite ?alist :in all)
+(def-suite ?alist :in ?all)
 (in-suite ?alist)
 
 
