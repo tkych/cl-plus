@@ -14,7 +14,7 @@
   (:export #:?polymorphics)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:named-readtables
                 #:in-readtable)
   (:import-from #:cl-plus.src.readtables
@@ -29,7 +29,7 @@
 
 (in-package #:cl-plus.test.core.polymorphics)
 
-(def-suite ?polymorphics :in all)
+(def-suite ?polymorphics :in ?all)
 (in-suite ?polymorphics)
 (in-readtable cl+)
 

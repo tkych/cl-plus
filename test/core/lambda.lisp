@@ -16,7 +16,7 @@
   (:import-from #:named-readtables
                 #:in-readtable)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.readtables
                 #:cl+caret)
   (:import-from #:cl-plus.src.core.lambda
@@ -25,7 +25,7 @@
 
 (in-package #:cl-plus.test.core.lambda)
 
-(def-suite ?lambda :in all)
+(def-suite ?lambda :in ?all)
 (in-suite ?lambda)
 
 (in-readtable cl+caret)

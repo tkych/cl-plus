@@ -16,7 +16,7 @@
   (:import-from #:alexandria
                 #:set-equal)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -34,7 +34,7 @@
 
 (in-package #:cl-plus.test.core.sequence)
 
-(def-suite ?sequence :in all)
+(def-suite ?sequence :in ?all)
 (in-suite ?sequence)
 
 

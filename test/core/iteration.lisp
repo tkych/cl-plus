@@ -14,7 +14,7 @@
   (:export #:?iteration)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.core.iteration
                 #:enable-loop-unrolling
                 #:disable-loop-unrolling
@@ -22,7 +22,7 @@
 
 (in-package #:cl-plus.test.core.iteration)
 
-(def-suite ?iteration :in all)
+(def-suite ?iteration :in ?all)
 (in-suite ?iteration)
 
 ;;--------------------------------------------------------------------

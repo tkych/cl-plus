@@ -13,7 +13,7 @@
 (defpackage #:cl-plus-test
   (:nicknames #:cl+t)
   (:export #:run-tests
-           #:all
+           #:?all
            #:is-=
            #:is-equal
            #:is-equalp)
@@ -21,7 +21,7 @@
 
 (in-package #:cl-plus-test)
 
-(def-suite all)
+(def-suite ?all)
 
 
 (defmacro is-= (got expected &rest reason-args)

@@ -14,13 +14,13 @@
   (:export #:?clrfi-1)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.clrfi.clrfi-1
                 #:featurep))
 
 (in-package #:cl-plus.test.clrfi.clrfi-1)
 
-(def-suite ?clrfi-1 :in all)
+(def-suite ?clrfi-1 :in ?all)
 (in-suite ?clrfi-1)
 
 ;; Note: We may suppose that TRIVIAL-FEATRURES has been loaded into lisp-image.

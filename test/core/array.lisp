@@ -14,7 +14,7 @@
   (:export #:?array)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -26,7 +26,7 @@
 
 (in-package #:cl-plus.test.core.array)
 
-(def-suite ?array :in all)
+(def-suite ?array :in ?all)
 (in-suite ?array)
 
 ;;--------------------------------------------------------------------

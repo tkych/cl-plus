@@ -22,7 +22,7 @@
   (:export #:?lazy-sequence)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:named-readtables
                 #:in-readtable)
   (:import-from #:cl-plus.src.readtables
@@ -80,7 +80,7 @@
 
 (in-package #:cl-plus.test.core.lazy-sequence)
 
-(def-suite ?lazy-sequence :in all)
+(def-suite ?lazy-sequence :in ?all)
 (in-suite ?lazy-sequence)
 
 (in-readtable cl+sharp-bracket)

@@ -14,7 +14,7 @@
   (:export #:?sequens)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-eql
                 #:is-equal
                 #:is-equalp)
@@ -42,7 +42,7 @@
 
 (in-package #:cl-plus.test.core.sequens)
 
-(def-suite ?sequens :in all)
+(def-suite ?sequens :in ?all)
 (in-suite ?sequens)
 
 (in-readtable cl+sharp-bracket)

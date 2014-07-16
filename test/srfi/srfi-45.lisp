@@ -61,7 +61,7 @@ References
   (:export #:?srfi-45)
   (:use #:cl #:fiveam)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   #+ccl
   (:import-from #:trivial-timeout
                 #:with-timeout
@@ -82,7 +82,7 @@ References
 
 (in-package #:cl-plus.test.srfi.srfi-45)
 
-(def-suite ?srfi-45 :in all)
+(def-suite ?srfi-45 :in ?all)
 (in-suite ?srfi-45)
 
 

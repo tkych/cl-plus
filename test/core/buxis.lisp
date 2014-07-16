@@ -29,7 +29,7 @@
                 #:with-timeout
                 #:timeout-error)
   (:import-from #:cl-plus-test
-                #:all
+                #:?all
                 #:is-=
                 #:is-eql
                 #:is-equal
@@ -60,7 +60,7 @@
 
 (in-package #:cl-plus.test.core.buxis)
 
-(def-suite ?buxis :in all)
+(def-suite ?buxis :in ?all)
 (in-suite ?buxis)
 
 (in-readtable cl+)

@@ -62,7 +62,7 @@ References
   (:import-from #:alexandria
                 #:read-file-into-string)
   (:import-from #:cl-plus-test
-                #:all)
+                #:?all)
   (:import-from #:cl-plus.src.srfi.srfi-45
                 #:lazy
                 #:eager
@@ -113,7 +113,7 @@ References
 
 (in-package #:cl-plus.test.srfi.srfi-41)
 
-(def-suite ?srfi-41 :in all)
+(def-suite ?srfi-41 :in ?all)
 (in-suite ?srfi-41)
 
 ;;--------------------------------------------------------------------

@@ -43,11 +43,22 @@
   (import suites)
   (export suites))
 
+(defun %run-tests (suite)
+  (let* ((result-list  (run suite))
+         (total-result (every (lambda (r) (typep r 'fiveam::test-passed)) ; !
+                              result-list)))
+    (explain! result-list)
+    total-result))
+
 (defun run-tests (&rest suites)
   "Runs tests for cl-plus. If no suite is supplied, runs all tests."
-  (if suites
-      (fiveam:run! suites)
-      (fiveam:run! 'all)))
+  (if (null suites)
+      (%run-tests '?all)
+      (loop :with final-result := t ; ensured at least one suit in the suits.
+            :for s :in suites
+            :unless (%run-tests s)
+              :do (setf final-result nil)
+            :finally (return final-result))))
 
 
 ;;====================================================================
